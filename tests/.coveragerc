@@ -1,0 +1,26 @@
+[run]
+branch = False
+concurrency = gevent
+parallel = True
+
+include =
+    */larch/reactive/*
+
+omit =
+    */__init__.py
+    */core.py
+    */_handler.py
+    */tests/*    
+
+plugins = Cython.Coverage
+
+[report]
+skip_covered = True
+exclude_lines =
+	  pragma: no cover
+	  def __repr__
+	  raise NotImplementedError
+	  raise MarketShutdown
+	  except ZeroDivisionError
+	  except OSError:
+	  pass

@@ -1,0 +1,40 @@
+{% set data = load_setup_py_data(setup_file=RECIPE_DIR + "/../setup.py") %}
+
+package:
+  name: {{ data['name'] }}
+  version: {{ data['version'] }}
+
+source:
+  path: ..
+
+build:
+  number: 0
+  script: {{ PYTHON }} -m pip install --no-deps --ignore-installed .
+
+requirements:
+  host:
+    - python
+    - cython
+    - pip
+
+  run:
+    - python
+
+  build:
+    - {{ compiler('cxx') }}
+
+test:
+  requires:
+    - python
+
+  source_files:
+    - tests
+
+  commands:
+    - python tests/test_pcore.py -v
+    - python tests/test_ccore.py -v
+
+about:
+  home: {{ data['url'] }}
+  license: {{ data['license'] }}
+  summary: {{ data['description'] }}

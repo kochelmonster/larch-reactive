@@ -1,0 +1,91 @@
+>>> from __future__ import unicode_literals
+>>> # <start debugging>
+>>> import os
+>>> os.environ["LARCH_REACTIVE"] = "python"
+>>> import larch.reactive as ra
+>>> import larch.reactive.debug as debug
+>>> from datetime import datetime, timedelta
+>>>
+>>> @ra.reactive
+... class Task(object):
+...     start = ra.Cell(datetime.now())
+...     end = ra.Cell()
+...     duration = ra.Cell(timedelta(hours=3))
+...     prev = ra.Cell()
+...     desc = ra.Cell("")
+...
+...     @ra.rule
+...     def _rule_start(self):
+...         if self.prev:
+...             self.start = self.prev.end
+...
+...     @ra.rule
+...     def _rule_end(self):
+...         self.end = self.start + self.duration
+...
+...     def __repr__(self):
+...         return "'{}'".format(self.desc)
+...
+>>> read = Task(desc="read tutorial", start=datetime(2016, 1, 9, 8),
+...             duration=timedelta(hours=2))
+>>> write = Task(desc="write own programs", prev=read)
+>>>
+>>> print(debug.dump(read))
+cells of 'read tutorial'
+  start(Cell-5726ac8)
+    <Rule _rule_end(0, 2) of 'read tutorial'>(5826598)
+  end(Cell-5726cc8)
+    <Rule _rule_start(0, 3) of 'write own programs'>(58266d8)
+  duration(Cell-57268c8)
+    <Rule _rule_end(0, 2) of 'read tutorial'>(5826598)
+  prev(Cell-5726a48)
+    <Rule _rule_start(0, 1) of 'read tutorial'>(5826548)
+>>> # <end debugging>
+>>>
+>>> # <start logging>
+>>> # from io import StringIO
+>>> from io import BytesIO as StringIO
+>>> out = StringIO()
+>>>
+>>> with debug.debug(output=out):
+...     read.start += timedelta(hours=0.5)
+...
+>>> print(out.getvalue())
+emit(1) <console>(2): ''
+  (<Rule _rule_end(0, 2) of 'read tutorial'>,)
+
+call rule <Rule _rule_end(0, 5) of 'read tutorial'>
+  touch ('read tutorial'.<Cell start(1/0)>)
+    _rule_end in <console>(16): ''
+
+  touch ('read tutorial'.<Cell duration(0/2)>)
+    _rule_end in <console>(16): ''
+
+    emit(2) <console>(16): ''
+      (<Rule _rule_start(0, 3) of 'write own programs'>,)
+
+
+call rule <Rule _rule_start(0, 6) of 'write own programs'>
+  touch ('write own programs'.<Cell prev(2/3)>)
+    _rule_start in <console>(11): ''
+
+  touch ('write own programs'.<Cell prev(2/3)>)
+    _rule_start in <console>(12): ''
+
+  touch ('read tutorial'.<Cell end(3/1)>)
+    _rule_start in <console>(12): ''
+
+    emit(2) <console>(12): ''
+      (<Rule _rule_end(0, 4) of 'write own programs'>,)
+
+
+call rule <Rule _rule_end(0, 7) of 'write own programs'>
+  touch ('write own programs'.<Cell start(1/0)>)
+    _rule_end in <console>(16): ''
+
+  touch ('write own programs'.<Cell duration(0/2)>)
+    _rule_end in <console>(16): ''
+
+
+
+>>> # <end logging>
