@@ -30,4 +30,6 @@ Documentation
 
 For more information, please refer to the full documentation available at:
 
-`larch.reactive Documentation <link_to_documentation>`_
+`larch.reactive Documentation <https://kochelmonster.github.io/larch-reactive/index.html>`_
+
+.. |ra| replace:: `larch.reactive`
