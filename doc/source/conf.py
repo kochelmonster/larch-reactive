@@ -27,7 +27,7 @@ os.environ["LARCH_REACTIVE"] = "python"
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx',
               'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.viewcode',
-              'sphinxcontrib.plantuml', 'sphinxcontrib.napoleon']
+              'sphinxcontrib.plantuml', 'sphinx.ext.napoleon']
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 plantuml = 'java -jar ' + os.path.join(basedir, 'plantuml.jar').replace(os.sep, "/")
@@ -222,4 +222,4 @@ man_pages = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
+intersphinx_mapping = {'http://docs.python.org/': ('http://docs.python.org/', None) }
