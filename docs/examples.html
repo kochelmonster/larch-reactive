@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Larch-Reactive by Examples &#8212; larch.reactive 3.6.2235 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=34905f61" />
+    <script src="_static/documentation_options.js?v=1e710abd"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Library Reference" href="reference.html" />
+    <link rel="prev" title="Welcome to larch.reactive’s documentation!" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="Library Reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to larch.reactive’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">larch.reactive 3.6.2235 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Larch-Reactive by Examples</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="larch-reactive-by-examples">
+<h1>Larch-Reactive by Examples<a class="headerlink" href="#larch-reactive-by-examples" title="Link to this heading">¶</a></h1>
+<p>This chapter introduces every feature of <cite>larch.reactive</cite>, by providing an example.
+Sections marked with <a class="reference internal" href="_images/db.gif"><img alt="bend" src="_images/db.gif" style="width: 1em;" /></a> describe the internals of <cite>larch.reactive</cite> and can be skipped.
+But keep in mind, if you want to get a real deep insight view: read the code.</p>
+<section id="creating-reactive-classes-cells-rules">
+<span id="firstuc"></span><h2>Creating Reactive Classes, Cells, Rules<a class="headerlink" href="#creating-reactive-classes-cells-rules" title="Link to this heading">¶</a></h2>
+<p>Lets come back to the first example. <cite>larch.reactive</cite> implements the observer pattern to
+connect rules (observer) to cells (subject).</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">larch.reactive</span> <span class="k">as</span> <span class="nn">ra</span>
+<span class="linenos"> 2</span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="linenos"> 3</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos"> 4</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 5</span><span class="gp">... </span><span class="k">class</span> <span class="nc">Task</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    <span class="n">start</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+<span class="linenos"> 7</span><span class="gp">... </span>    <span class="n">end</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos"> 8</span><span class="gp">... </span>    <span class="n">duration</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+<span class="linenos"> 9</span><span class="gp">... </span>    <span class="n">prev</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos">10</span><span class="gp">... </span>    <span class="n">desc</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="linenos">11</span><span class="gp">... </span>    
+<span class="linenos">12</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos">13</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">14</span><span class="gp">... </span>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev</span><span class="p">:</span>
+<span class="linenos">15</span><span class="gp">... </span>            <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev</span><span class="o">.</span><span class="n">end</span>
+<span class="linenos">16</span><span class="gp">... </span>    
+<span class="linenos">17</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos">18</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">19</span><span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+<span class="linenos">20</span><span class="gp">... </span>    
+<span class="linenos">21</span><span class="gp">... </span>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">22</span><span class="gp">... </span>        <span class="k">return</span> <span class="s2">&quot;&#39;</span><span class="si">{}</span><span class="s2">&#39;: </span><span class="si">{}</span><span class="s2"> -&gt; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">desc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+<span class="linenos">23</span><span class="gp">... </span>
+<span class="linenos">24</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span> <span class="o">=</span> <span class="n">Task</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s2">&quot;read tutorial&quot;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+<span class="linenos">25</span><span class="gp">... </span>            <span class="n">duration</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="linenos">26</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span>
+<span class="linenos">27</span><span class="go">&#39;read tutorial&#39;: 2016-01-09 08:00:00 -&gt; 2016-01-09 10:00:00</span>
+<span class="linenos">28</span><span class="gp">&gt;&gt;&gt; </span><span class="n">write</span> <span class="o">=</span> <span class="n">Task</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s2">&quot;write own programs&quot;</span><span class="p">,</span> <span class="n">prev</span><span class="o">=</span><span class="n">read</span><span class="p">)</span>
+<span class="linenos">29</span><span class="gp">&gt;&gt;&gt; </span><span class="n">write</span>
+<span class="linenos">30</span><span class="go">&#39;write own programs&#39;: 2016-01-09 10:00:00 -&gt; 2016-01-09 13:00:00</span>
+<span class="linenos">31</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="linenos">32</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span>
+<span class="linenos">33</span><span class="go">&#39;read tutorial&#39;: 2016-01-09 08:00:00 -&gt; 2016-01-09 11:00:00</span>
+<span class="linenos">34</span><span class="gp">&gt;&gt;&gt; </span><span class="n">write</span>
+<span class="linenos">35</span><span class="go">&#39;write own programs&#39;: 2016-01-09 11:00:00 -&gt; 2016-01-09 14:00:00</span>
+</pre></div>
+</div>
+<dl>
+<dt>Line 4:</dt><dd><p>The <a class="reference internal" href="reference.html#id0" title="larch.reactive.reactive"><code class="xref py py-func docutils literal notranslate"><span class="pre">reactive()</span></code></a> decorator transforms an “ordinary” python
+class to a “reactive” class.</p>
+</dd>
+<dt>Lines 6-10:</dt><dd><p>Attributes that can be watched by rules must be declared as
+<a class="reference internal" href="reference.html#larch.reactive.Cell" title="larch.reactive.Cell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code></a>. A Cell can have a default value by providing
+an argument while construction. By default cells are initialized with <cite>None</cite>.</p>
+</dd>
+<dt>Line 12, 17:</dt><dd><p>The <a class="reference internal" href="reference.html#larch.reactive.rule" title="larch.reactive.rule"><code class="xref py py-func docutils literal notranslate"><span class="pre">rule()</span></code></a> decorator transforms an “ordinary” python
+method to a rule, that is able to observe cells.
+Whenever a rule is executed, reading a cell’s value, registers the rule
+as observer for that cell. When such a cell changes its value, the rule is
+executed again.</p>
+</dd>
+<dt>Line 24:</dt><dd><p>Cells can be initialized by using keyword arguments, while constructing a
+reactive object.</p>
+<p><cite>larch.reactive</cite> extends the class <cite>__init__</cite> and add the following functionality:</p>
+<ol class="arabic simple">
+<li><p>For each cell a <cite>Container</cite> is created, that stores
+the cell’s value and acts as subject.</p></li>
+<li><p>For each rule an <cite>Observer</cite> object is created calling the rule method, when
+the observer is notified.</p></li>
+<li><p>All rules are executed for the first time in their order of appearance.</p></li>
+</ol>
+</dd>
+<dt>Line 31:</dt><dd><p>Changing a cells value will execute all rules observing the cell.</p>
+</dd>
+</dl>
+<div class="admonition note" id="bestpractice">
+<p class="admonition-title">Note</p>
+<p>After several years of using the <cite>larch.reactive</cite>-library some best practice clues
+have been evolved:</p>
+<ul class="simple">
+<li><p>keep rules short</p></li>
+<li><p>try to avoid calling functions. Often this can lead to hidden dependencies,
+if the function accidently read unwanted cells. If you have to call
+function use the <a class="reference internal" href="#yield-rules"><span class="std std-ref">yield mechanism</span></a>.</p></li>
+</ul>
+</div>
+<section id="bend-internals-of-write">
+<h3><a class="reference internal" href="_images/db.gif"><img alt="bend" src="_images/db.gif" style="width: 1em;" /></a> Internals of <cite>write</cite><a class="headerlink" href="#bend-internals-of-write" title="Link to this heading">¶</a></h3>
+<p>The following diagramm shows the internal state of <cite>write</cite> at line 34. (For more
+in depth information read the code in pcore.py)</p>
+<p class="plantuml">
+<img src="_images/plantuml-5e20883c3c14bccce69357e855dc5587b750f2f9.png" alt="object &quot;write:Task&quot; as write {
+  __reactive_state__ = [...]
+  __reactive_rules__ = (...)
+}
+
+object &quot;read:Task&quot; as read {
+  __reactive_state__ = [...]
+  __reactive_rules__ = (...)
+}
+
+object &quot;end:Container&quot; as rend {
+  value=datetime(2016, 1, 9, 14)
+}
+
+object &quot;start:Container&quot; as start {
+  value=datetime(2016, 1, 9, 11)
+}
+
+object &quot;end:Container&quot; as end {
+  value=datetime(2016, 1, 9, 14)
+}
+
+object &quot;duration:Container&quot; as duration {
+  value=timedelta(hours=3)
+}
+
+object &quot;prev:Container&quot; as prev {
+  value=None
+}
+
+object &quot;desc:Container&quot; as desc {
+  value=&quot;write tutorial&quot;
+}
+
+object &quot;_rule_start:Rule&quot; as _start {
+  method=write._rule_start
+}
+
+object &quot;_rule_end:Rule&quot; as _end {
+  method=write._rule_end
+}
+
+write o- &quot;[0]&quot; start
+end &quot;[1]&quot;--o write
+write o-- &quot;[2]&quot; duration
+prev &quot;[3]&quot;-o write
+desc &quot;[4]&quot;--o write
+write o-- &quot;[0]&quot; _start
+write o-- &quot;[1]&quot; _end
+
+_end --o start
+_end --o duration
+
+_start --o prev
+_start --o rend
+
+read o-- rend"/>
+</p>
+<p>Each <a class="reference internal" href="reference.html#larch.reactive.Cell" title="larch.reactive.Cell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code></a> attribute is a <a class="reference external" href="https://docs.python.org/3/howto/descriptor.html">descriptor</a>  that stores its
+value in a <cite>Container</cite> object. <cite>write</cite> has an attribute
+<cite>__reactive_state__</cite> containing a list of all Containers</p>
+<p>For each rule method a <cite>Rule</cite> object is created and internally stored in the
+<cite>__reactive_rules__</cite> attribute.</p>
+<p>Each Container stores a list of its observers:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><cite>_rule_end</cite> observes <cite>write.start</cite> and <cite>write.duration</cite>.</p></li>
+<li><p><cite>_rule_start</cite> observes <cite>write.prev</cite> and <cite>read.end</cite>.</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="bend-object-interaction">
+<h3><a class="reference internal" href="_images/db.gif"><img alt="bend" src="_images/db.gif" style="width: 1em;" /></a> Object interaction<a class="headerlink" href="#bend-object-interaction" title="Link to this heading">¶</a></h3>
+<p>The following diagramms show the object interaction at line 31. (For more
+in depth information read the code in pcore.py)</p>
+<p class="plantuml">
+<img src="_images/plantuml-7dbd67f2c8eb6a9f2e3f54b280945dcecc28e12f.png" alt="autonumber
+
+participant &quot;read.duration\n:Container&quot; as rduration
+
+participant rcontext
+
+participant &quot;read._rule_end\n:Rule&quot; as _end
+
+participant &quot;read.start\n:Container&quot; as rstart
+
+participant &quot;read.end\n:Container&quot; as rend
+
+rduration -&gt; rcontext : emit
+
+activate rcontext
+
+rcontext -&gt; rcontext : start atomic action
+
+rcontext -&gt; _end : ~__call__
+
+_end -&gt; rstart : touch
+
+_end -&gt; rduration: touch
+
+_end -&gt; rend: set
+
+rend -&gt; rcontext : emit"/>
+</p>
+<p class="plantuml">
+<img src="_images/plantuml-4b9faf80f5be9eaee770c4cc4966e16ef8bc0e96.png" alt="autonumber 8
+
+participant rcontext
+
+participant &quot;write._rule_start\n:Rule&quot; as _start
+
+participant &quot;write.prev\n:Container&quot; as wprev
+
+participant &quot;read.end\n:Container&quot; as rend
+
+participant &quot;write.start\n:Container&quot; as wstart
+
+participant &quot;write._rule_end\n:Rule&quot; as _end
+
+activate rcontext
+
+rcontext -&gt; _start : ~__call__
+
+_start -&gt; wprev : touch
+
+_start -&gt; rend : touch
+
+_start -&gt; wstart : set
+
+wstart -&gt; rcontext : emit
+
+rcontext -&gt; _end : ~__call__
+note right of rcontext
+Same touch and set calls as in read._rule_end
+end note
+
+autonumber 17
+rcontext -&gt; rcontext : atomic_end
+deactivate rcontext"/>
+</p>
+<p><cite>rcontext</cite> is the short form of “reactive context”. It is a global singleton
+object managing the internal event system of <cite>larch.reactive</cite>.</p>
+<ol class="arabic simple">
+<li><p>When <a class="reference internal" href="reference.html#larch.reactive.Cell" title="larch.reactive.Cell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code></a> attribute (in this case <cite>duration</cite>) is
+changed the <cite>Container</cite> calls <cite>emit</cite> of rcontext.</p></li>
+<li><p><cite>rcontext</cite> enters an atomic stage.</p></li>
+</ol>
+</section>
+</section>
+<section id="cell-types">
+<h2>Cell types<a class="headerlink" href="#cell-types" title="Link to this heading">¶</a></h2>
+<p>While working with <cite>larch.reactive</cite> it turned out it is convenient to have some more
+Cell objects.</p>
+<p><a class="reference internal" href="reference.html#larch.reactive.TypeCell" title="larch.reactive.TypeCell"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeCell</span></code></a> is used to ensure the cell’s value has
+a specific type:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">Point</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">x</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">TypeCell</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    <span class="n">y</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">TypeCell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">converter</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="linenos"> 5</span><span class="gp">... </span>
+<span class="linenos"> 6</span><span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;2&quot;</span><span class="p">)</span>
+<span class="linenos"> 7</span><span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">x</span>
+<span class="linenos"> 8</span><span class="go">1</span>
+<span class="linenos"> 9</span><span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">y</span>
+<span class="linenos">10</span><span class="go">2.0</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="reference.html#larch.reactive.MakeCell" title="larch.reactive.MakeCell"><code class="xref py py-class docutils literal notranslate"><span class="pre">MakeCell</span></code></a> constructs the default attribute by calling
+a constructor:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos">2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">ListContainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos">3</span><span class="gp">... </span>    <span class="n">values</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">MakeCell</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="linenos">4</span><span class="gp">... </span>
+<span class="linenos">5</span><span class="gp">&gt;&gt;&gt; </span><span class="n">lc</span> <span class="o">=</span> <span class="n">ListContainer</span><span class="p">()</span>
+<span class="linenos">6</span><span class="gp">&gt;&gt;&gt; </span><span class="n">lc</span><span class="o">.</span><span class="n">values</span>
+<span class="linenos">7</span><span class="go">[1, 2, 3]</span>
+</pre></div>
+</div>
+<p>Keep in mind: For each new <cite>ListContainer</cite> object a new list is created.</p>
+</section>
+<section id="pointers">
+<h2>Pointers<a class="headerlink" href="#pointers" title="Link to this heading">¶</a></h2>
+<p>A small observer class can be used to inspect cell attributes of an object.</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">StartObserver</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">subject</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    
+<span class="linenos"> 5</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_print</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos"> 7</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;start:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+<span class="linenos"> 8</span><span class="gp">... </span>
+<span class="linenos"> 9</span><span class="gp">&gt;&gt;&gt; </span><span class="n">observer</span> <span class="o">=</span> <span class="n">StartObserver</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">write</span><span class="p">)</span>
+<span class="linenos">10</span><span class="go">start: 2016-01-09 11:00:00</span>
+<span class="linenos">11</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span><span class="o">.</span><span class="n">start</span> <span class="o">+=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="linenos">12</span><span class="go">start: 2016-01-09 11:30:00</span>
+<span class="linenos">13</span><span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">observer</span>  <span class="c1"># deactivate observer</span>
+</pre></div>
+</div>
+<p>Remember that all rules will be called at construction, therefore the
+start attribute is printed while the <cite>StartObserver</cite> is created.
+The <cite>StartObserver</cite> class is not very flexible, it can only monitor start
+attributes. Here is a better observer:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">ProxyObserver</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">subject</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    
+<span class="linenos"> 5</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_print</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos"> 7</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;attribute:&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">())</span>
+<span class="linenos"> 8</span><span class="gp">... </span>
+<span class="linenos"> 9</span><span class="gp">&gt;&gt;&gt; </span><span class="n">observer</span> <span class="o">=</span> <span class="n">ProxyObserver</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">(</span><span class="n">write</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+<span class="linenos">10</span><span class="go">attribute: &lt;Proxy-&#39;write own programs&#39;: 2016-01-09 11:30:00 -&gt; 2016-01-09 14:30:00.start&gt; 2016-01-09 11:30:00</span>
+<span class="linenos">11</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span><span class="o">.</span><span class="n">start</span> <span class="o">+=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="linenos">12</span><span class="go">attribute: &lt;Proxy-&#39;write own programs&#39;: 2016-01-09 12:00:00 -&gt; 2016-01-09 15:00:00.start&gt; 2016-01-09 12:00:00</span>
+</pre></div>
+</div>
+<p>A Pointer acts like a pointer in the C language. An expression like
+<cite>ra.Pointer(write).start</cite> points to the attribute <cite>start</cite> of object <cite>write</cite>.
+To get the value of a pointer you have to call it: <cite>ra.Pointer(write).start()</cite>.</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">(</span><span class="n">write</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="o">==</span> <span class="n">write</span><span class="o">.</span><span class="n">start</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>You can also set an attribute value through a pointer:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">(</span><span class="n">read</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">11</span><span class="p">))</span>
+<span class="go">attribute: &lt;Proxy-&#39;write own programs&#39;: 2016-02-09 14:00:00 -&gt; 2016-02-09 17:00:00.start&gt; 2016-02-09 14:00:00</span>
+</pre></div>
+</div>
+<p>Pointers can not only point to simple attributes but to whole expressions:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># prints write.start + 30min</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">observer</span> <span class="o">=</span> <span class="n">ProxyObserver</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">(</span><span class="n">write</span><span class="p">)</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
+<span class="go">attribute: &lt;Proxy-add(&#39;write own programs&#39;: 2016-02-09 14:00:00 -&gt; 2016-02-09 17:00:00.start, datetime.timedelta(0, 1800))&gt; 2016-02-09 14:30:00</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># prints the maximum of read.end and write.end</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">observer</span> <span class="o">=</span> <span class="n">ProxyObserver</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">ra</span><span class="o">.</span><span class="n">ProxyExpression</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="nb">max</span><span class="p">,</span> <span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">(</span><span class="n">read</span><span class="p">)</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">(</span><span class="n">write</span><span class="p">)</span><span class="o">.</span><span class="n">end</span><span class="p">))</span>
+<span class="go">attribute: &lt;Proxy-max(&#39;read tutorial&#39;: 2016-02-09 11:00:00 -&gt; 2016-02-09 14:00:00.end, &#39;write own programs&#39;: 2016-02-09 14:00:00 -&gt; 2016-02-09 17:00:00.end)&gt; 2016-02-09 17:00:00</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">observer</span>  <span class="c1"># deactivate observer</span>
+</pre></div>
+</div>
+<p>Last not least an improved  version of the <a class="reference internal" href="#firstuc"><span class="std std-ref">task example</span></a>.</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">ProxyTask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">start</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">TypeCell</span><span class="p">(</span><span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()),</span> <span class="n">converter</span><span class="o">=</span><span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">)</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    <span class="n">end</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos"> 5</span><span class="gp">... </span>    <span class="n">duration</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">TypeCell</span><span class="p">(</span><span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">(</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">3</span><span class="p">)),</span> <span class="n">converter</span><span class="o">=</span><span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">)</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    <span class="n">desc</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="linenos"> 7</span><span class="gp">... </span>    
+<span class="linenos"> 8</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos"> 9</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">10</span><span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">()</span>
+<span class="linenos">11</span><span class="gp">... </span>    
+<span class="linenos">12</span><span class="gp">... </span>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">13</span><span class="gp">... </span>        <span class="k">return</span> <span class="s2">&quot;&#39;</span><span class="si">{}</span><span class="s2">&#39;: </span><span class="si">{}</span><span class="s2"> -&gt; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">desc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+<span class="linenos">14</span><span class="gp">... </span>
+<span class="linenos">15</span><span class="gp">&gt;&gt;&gt; </span><span class="n">pread</span> <span class="o">=</span> <span class="n">ProxyTask</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s2">&quot;read tutorial&quot;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+<span class="linenos">16</span><span class="gp">... </span>                  <span class="n">duration</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="linenos">17</span><span class="gp">&gt;&gt;&gt; </span><span class="n">pwrite</span> <span class="o">=</span> <span class="n">ProxyTask</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s2">&quot;write own programs&quot;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">ra</span><span class="o">.</span><span class="n">Proxy</span><span class="p">(</span><span class="n">pread</span><span class="p">)</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+<span class="linenos">18</span><span class="gp">&gt;&gt;&gt; </span><span class="n">pread</span>
+<span class="linenos">19</span><span class="go">&#39;read tutorial&#39;: 2016-01-09 08:00:00 -&gt; 2016-01-09 10:00:00</span>
+<span class="linenos">20</span><span class="gp">&gt;&gt;&gt; </span><span class="n">pwrite</span>
+<span class="linenos">21</span><span class="go">&#39;write own programs&#39;: 2016-01-09 10:00:00 -&gt; 2016-01-09 13:00:00</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="reference.html#larch.reactive.TypeCell" title="larch.reactive.TypeCell"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeCell</span></code></a> is used for <cite>start</cite> and <cite>duration</cite> to ensure
+they contain pointers. The <cite>prev</cite> attribute is not needed anymore, the
+dependencies are created by pointers.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The features of pointers:</p>
+<ul class="simple">
+<li><p>Pointers will be evaluated when you call them.</p></li>
+<li><p>Pointers can point to whole expressions.</p></li>
+<li><p>The value of simple pointers can be set by calling the pointers with the
+new value.</p></li>
+</ul>
+</div>
+<section id="trivial-delegator">
+<h3>Trivial Delegator<a class="headerlink" href="#trivial-delegator" title="Link to this heading">¶</a></h3>
+<p>The implementation of pointers offers a simple mechanism for a trivial delegator:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">TaskPrinter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">task</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    <span class="c1"># make task attributes to my own</span>
+<span class="linenos"> 5</span><span class="gp">... </span>    <span class="n">start</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">SELF</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">start</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    <span class="n">end</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">SELF</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">end</span>
+<span class="linenos"> 7</span><span class="gp">... </span>    <span class="n">desc</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">SELF</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">desc</span>
+<span class="linenos"> 8</span><span class="gp">... </span>    
+<span class="linenos"> 9</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos">10</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_print</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">11</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&#39;</span><span class="si">{}</span><span class="s2">&#39;: </span><span class="si">{}</span><span class="s2"> -&gt; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">desc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">))</span>
+<span class="linenos">12</span><span class="gp">... </span>
+<span class="linenos">13</span><span class="gp">&gt;&gt;&gt; </span><span class="n">printer</span> <span class="o">=</span> <span class="n">TaskPrinter</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">write</span><span class="p">)</span>
+<span class="linenos">14</span><span class="go">&#39;write own programs&#39;: 2016-02-09 14:00:00 -&gt; 2016-02-09 17:00:00</span>
+<span class="linenos">15</span><span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">printer</span>  <span class="c1"># deactivate printer</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="contexts">
+<h2>Contexts<a class="headerlink" href="#contexts" title="Link to this heading">¶</a></h2>
+<p>Changing cell attributes can be influenced by contexts. Context’s can also
+be used as decorators.</p>
+<section id="atomic">
+<h3><a class="reference internal" href="reference.html#larch.reactive.atomic" title="larch.reactive.atomic"><code class="xref py py-func docutils literal notranslate"><span class="pre">atomic()</span></code></a><a class="headerlink" href="#atomic" title="Link to this heading">¶</a></h3>
+<p>Changing cells within an atomic context, will postpone the call of rules after
+the context finishes:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="n">printer</span> <span class="o">=</span> <span class="n">TaskPrinter</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">read</span><span class="p">)</span>
+<span class="linenos"> 2</span><span class="go">&#39;read tutorial&#39;: 2016-02-09 11:00:00 -&gt; 2016-02-09 14:00:00</span>
+<span class="linenos"> 3</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos"> 4</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="linenos"> 5</span><span class="go">&#39;read tutorial&#39;: 2016-01-08 08:00:00 -&gt; 2016-01-08 11:00:00</span>
+<span class="linenos"> 6</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="linenos"> 7</span><span class="go">&#39;read tutorial&#39;: 2016-01-08 08:00:00 -&gt; 2016-01-08 10:00:00</span>
+<span class="linenos"> 8</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos"> 9</span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">ra</span><span class="o">.</span><span class="n">atomic</span><span class="p">():</span>
+<span class="linenos">10</span><span class="gp">... </span>    <span class="n">read</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="linenos">11</span><span class="gp">... </span>    <span class="n">read</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="linenos">12</span><span class="gp">... </span>
+<span class="linenos">13</span><span class="go">&#39;read tutorial&#39;: 2016-01-09 08:00:00 -&gt; 2016-01-09 11:00:00</span>
+<span class="linenos">14</span><span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">printer</span>  <span class="c1"># deactivate printer</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Line 4-7:</dt><dd><p>Every change will result in a immediate reactive reaction.</p>
+</dd>
+<dt>Line 9-13:</dt><dd><p>Within an atomic context, the rules are called after the context ends.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Features of atomic contexts</p>
+<ul class="simple">
+<li><p>rules are executed in an atomic context</p></li>
+<li><p>in a gevent environment only one greenlet can execute an atomic context.</p></li>
+</ul>
+<p>If another greenlet wants to execute an atomic context it will be locked
+until the previous context has finished.</p>
+</div>
+</section>
+<section id="untouched">
+<h3><a class="reference internal" href="reference.html#larch.reactive.untouched" title="larch.reactive.untouched"><code class="xref py py-func docutils literal notranslate"><span class="pre">untouched()</span></code></a><a class="headerlink" href="#untouched" title="Link to this heading">¶</a></h3>
+<p>Rules will connect to a all cells read by the rule. Sometimes you want
+to avoid this:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">SillyTaskPrinter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">task</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    
+<span class="linenos"> 5</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_print</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos"> 7</span><span class="gp">... </span>        <span class="c1"># this rule does not depend on self.task.end</span>
+<span class="linenos"> 8</span><span class="gp">... </span>        <span class="k">with</span> <span class="n">ra</span><span class="o">.</span><span class="n">untouched</span><span class="p">():</span>
+<span class="linenos"> 9</span><span class="gp">... </span>            <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">end</span>
+<span class="linenos">10</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&#39;</span><span class="si">{}</span><span class="s2">&#39;: </span><span class="si">{}</span><span class="s2"> -&gt; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">desc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
+<span class="linenos">11</span><span class="gp">... </span>
+<span class="linenos">12</span><span class="gp">&gt;&gt;&gt; </span><span class="n">printer</span> <span class="o">=</span> <span class="n">SillyTaskPrinter</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">read</span><span class="p">)</span>
+<span class="linenos">13</span><span class="go">&#39;read tutorial&#39;: 2016-01-09 08:00:00 -&gt; 2016-01-09 11:00:00</span>
+<span class="linenos">14</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
+<span class="linenos">15</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="linenos">16</span><span class="go">&#39;read tutorial&#39;: 2016-01-08 08:00:00 -&gt; 2016-01-09 10:30:00</span>
+<span class="linenos">17</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">18</span><span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">printer</span>  <span class="c1"># deactivate printer</span>
+</pre></div>
+</div>
+<p>In line 14, the change of <cite>duration</cite> will trigger a change of <cite>end</cite>, but
+<cite>SillyTaskPrinter._rule_print</cite> does not depend on <cite>end</cite>, therefore nothing
+is printed.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You should use this context only, if there is no other solution.
+It often signals bad practice.</p>
+</div>
+</section>
+<section id="silent">
+<h3><a class="reference internal" href="reference.html#larch.reactive.silent" title="larch.reactive.silent"><code class="xref py py-func docutils literal notranslate"><span class="pre">silent()</span></code></a><a class="headerlink" href="#silent" title="Link to this heading">¶</a></h3>
+<p>If you want to change a cell without initiating the reactive reaction:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">ra</span><span class="o">.</span><span class="n">silent</span><span class="p">():</span>
+<span class="linenos">2</span><span class="gp">... </span>    <span class="n">read</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="linenos">3</span><span class="gp">... </span>
+<span class="linenos">4</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span>
+<span class="linenos">5</span><span class="go">&#39;read tutorial&#39;: 2016-01-09 08:00:00 -&gt; 2016-01-08 10:30:00</span>
+<span class="linenos">6</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">7</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span><span class="o">.</span><span class="n">_rule_end</span><span class="p">()</span>
+<span class="linenos">8</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span>
+<span class="linenos">9</span><span class="go">&#39;read tutorial&#39;: 2016-01-09 08:00:00 -&gt; 2016-01-09 10:30:00</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Line 1:</dt><dd><p>The <cite>silent</cite> context disables the reactive behaviour.</p>
+</dd>
+<dt>Line 4:</dt><dd><p><cite>read</cite> is in an inconsistent state: <cite>start &gt; end</cite>.</p>
+</dd>
+<dt>Line 7:</dt><dd><p>Calling the rule manually updates the depended attributes.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You should use this context only, if there is no other solution.
+It often signals bad practice.</p>
+</div>
+</section>
+</section>
+<section id="yield-rules">
+<span id="id1"></span><h2>yield rules<a class="headerlink" href="#yield-rules" title="Link to this heading">¶</a></h2>
+<p>Often rules should trigger a function with a big bunch of operations. Such a
+function should be called outside the atomic context to ensure:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>the rule should not depend on unwanted cells used in the function</p></li>
+<li><p>in gevent environments the function should not lock other greenlets
+by locking the atomic context.</p></li>
+</ul>
+</div></blockquote>
+<p>Therefore rules can be written as co-routines:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">TaskObserver</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">task</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    
+<span class="linenos"> 5</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_trigger_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos"> 7</span><span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">end</span>  <span class="c1"># touch without using the value</span>
+<span class="linenos"> 8</span><span class="gp">... </span>        <span class="k">yield</span>
+<span class="linenos"> 9</span><span class="gp">... </span>        <span class="c1"># many operations using different cells</span>
+<span class="linenos">10</span><span class="gp">... </span>        <span class="c1"># the rule does not depend on these cells</span>
+</pre></div>
+</div>
+<p>The <cite>yield</cite> separates a rule into an atomic part above the <cite>yield</cite> and
+an operational part after <cite>yield</cite>.</p>
+</section>
+<section id="rule-order">
+<h2>Rule Order<a class="headerlink" href="#rule-order" title="Link to this heading">¶</a></h2>
+<p>At construction rules are called in the order of their appearance.</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">RuleOrderDemo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    <span class="n">b</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos"> 5</span><span class="gp">... </span>    <span class="n">c</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    
+<span class="linenos"> 7</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos"> 8</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_first</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos"> 9</span><span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="linenos">10</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rule first is called c =&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="p">)</span>
+<span class="linenos">11</span><span class="gp">... </span>    
+<span class="linenos">12</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos">13</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_second</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">14</span><span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="linenos">15</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rule second is called b =&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+<span class="linenos">16</span><span class="gp">... </span>
+<span class="linenos">17</span><span class="gp">&gt;&gt;&gt; </span><span class="n">demo</span> <span class="o">=</span> <span class="n">RuleOrderDemo</span><span class="p">()</span>
+<span class="linenos">18</span><span class="go">rule first is called c = 1</span>
+<span class="linenos">19</span><span class="go">rule second is called b = 1</span>
+<span class="linenos">20</span><span class="go">rule first is called c = 2</span>
+<span class="linenos">21</span><span class="gp">&gt;&gt;&gt; </span><span class="n">demo</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">demo</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">demo</span><span class="o">.</span><span class="n">c</span>
+<span class="linenos">22</span><span class="go">(0, 1, 2)</span>
+</pre></div>
+</div>
+<p>As you can see <cite>_rule_first</cite> is called two times because “_rule_second” changes
+<cite>b</cite> and <cite>c</cite> must be updated. An internal optimization mechanism, rearranges
+the call order, to minimize the count of rule calls:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="gp">&gt;&gt;&gt; </span><span class="n">demo</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="linenos">2</span><span class="go">rule second is called b = 3</span>
+<span class="linenos">3</span><span class="go">rule first is called c = 4</span>
+</pre></div>
+</div>
+<p><cite>larch.reactive</cite> can be forced to obey a call order by using the
+<a class="reference internal" href="reference.html#larch.reactive.rule" title="larch.reactive.rule"><code class="xref py py-func docutils literal notranslate"><span class="pre">rule()</span></code></a> with a parameter.</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">RuleOrderDemo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    <span class="n">b</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos"> 5</span><span class="gp">... </span>    <span class="n">c</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    
+<span class="linenos"> 7</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="linenos"> 8</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_first</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos"> 9</span><span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="linenos">10</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rule first is called c =&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="p">)</span>
+<span class="linenos">11</span><span class="gp">... </span>    
+<span class="linenos">12</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="linenos">13</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_second</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">14</span><span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="linenos">15</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rule second is called b =&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+<span class="linenos">16</span><span class="gp">... </span>
+<span class="linenos">17</span><span class="gp">&gt;&gt;&gt; </span><span class="n">demo</span> <span class="o">=</span> <span class="n">RuleOrderDemo</span><span class="p">()</span>
+<span class="linenos">18</span><span class="go">rule second is called b = 1</span>
+<span class="linenos">19</span><span class="go">rule first is called c = 2</span>
+</pre></div>
+</div>
+</section>
+<section id="agents">
+<h2>Agents<a class="headerlink" href="#agents" title="Link to this heading">¶</a></h2>
+<p>To inspect internals of a cell agents can be used.</p>
+<section id="old">
+<h3><a class="reference internal" href="reference.html#larch.reactive.old" title="larch.reactive.old"><code class="xref py py-func docutils literal notranslate"><span class="pre">old()</span></code></a><a class="headerlink" href="#old" title="Link to this heading">¶</a></h3>
+<p>Within a rule <a class="reference internal" href="reference.html#larch.reactive.old" title="larch.reactive.old"><code class="xref py py-func docutils literal notranslate"><span class="pre">old()</span></code></a> delivers the value before the
+cell was changed:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">TaskPrinter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">task</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    
+<span class="linenos"> 5</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_print</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos"> 7</span><span class="gp">... </span>        <span class="n">otask</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">old</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">)</span>
+<span class="linenos"> 8</span><span class="gp">... </span>        <span class="k">if</span> <span class="n">otask</span><span class="o">.</span><span class="n">start</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">start</span> <span class="ow">and</span> <span class="n">otask</span><span class="o">.</span><span class="n">end</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">end</span><span class="p">:</span>
+<span class="linenos"> 9</span><span class="gp">... </span>            <span class="k">return</span>
+<span class="linenos">10</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&#39;</span><span class="si">{}</span><span class="s2">&#39;: </span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">) -&gt; </span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+<span class="linenos">11</span><span class="gp">... </span>            <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">desc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">otask</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+<span class="linenos">12</span><span class="gp">... </span>            <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">otask</span><span class="o">.</span><span class="n">end</span><span class="p">))</span>
+<span class="linenos">13</span><span class="gp">... </span>
+<span class="linenos">14</span><span class="gp">&gt;&gt;&gt; </span><span class="n">printer</span> <span class="o">=</span> <span class="n">TaskPrinter</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">read</span><span class="p">)</span>
+<span class="linenos">15</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="linenos">16</span><span class="go">&#39;read tutorial&#39;: 2016-01-08 08:00:00(2016-01-09 08:00:00) -&gt; 2016-01-08 10:30:00(2016-01-09 10:30:00)</span>
+<span class="linenos">17</span><span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">printer</span>  <span class="c1"># deactivate printer</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Line 7:</dt><dd><p>The <cite>otask</cite> object has the same cell attributes as <cite>self.task</cite> but
+their values are the values before the atomic context was entered.</p>
+</dd>
+<dt>Line 8:</dt><dd><p>Only print if the values have changed.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>The Lifetime of Reactive objects</strong></p>
+<p>In line 17 the the printer is deactivated. This is because
+inside the reactive framework all references to objects are weakrefs. If
+an object is garbage collected all “cell to rule” connections will be also
+destroyed.</p>
+</div>
+</section>
+<section id="cell">
+<h3><a class="reference internal" href="reference.html#larch.reactive.cell" title="larch.reactive.cell"><code class="xref py py-func docutils literal notranslate"><span class="pre">cell()</span></code></a><a class="headerlink" href="#cell" title="Link to this heading">¶</a></h3>
+<p>The <a class="reference internal" href="reference.html#larch.reactive.cell" title="larch.reactive.cell"><code class="xref py py-func docutils literal notranslate"><span class="pre">cell()</span></code></a> agent delivers the internal
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Container</span></code> object of the cell</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="gp">&gt;&gt;&gt; </span><span class="n">cread</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">read</span><span class="p">)</span>
+<span class="linenos">2</span><span class="gp">&gt;&gt;&gt; </span><span class="n">cread</span><span class="o">.</span><span class="n">end</span>
+<span class="linenos">3</span><span class="go">&lt;Container(7fc2247a1ca8: datetime.datetime(2016, 1, 8, 10, 30)&gt;</span>
+<span class="linenos">4</span><span class="gp">&gt;&gt;&gt; </span><span class="n">cread</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">get_observers</span><span class="p">()</span>
+<span class="linenos">5</span><span class="go">[&lt;Rule _rule_start(0, 60) of &#39;write own programs&#39;: 2016-01-08 10:30:00 -&gt; 2016-01-08 13:30:00&gt;]</span>
+<span class="linenos">6</span><span class="gp">&gt;&gt;&gt; </span><span class="n">cread</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">get_value</span><span class="p">()</span>
+<span class="linenos">7</span><span class="go">datetime.datetime(2016, 1, 8, 10, 30)</span>
+</pre></div>
+</div>
+<p>The <cite>cread</cite> object has the same cell attributes as <cite>self.task</cite> but
+their values point to the <code class="xref py py-class docutils literal notranslate"><span class="pre">Container</span></code> objects,
+containing their value.</p>
+</section>
+</section>
+<section id="collections">
+<h2>Collections<a class="headerlink" href="#collections" title="Link to this heading">¶</a></h2>
+<p><cite>larch.reactive</cite> provides subclasses of some standard mutable containers.</p>
+<section id="list">
+<h3><code class="xref py py-func docutils literal notranslate"><span class="pre">List()</span></code><a class="headerlink" href="#list" title="Link to this heading">¶</a></h3>
+<p>A list that fires events when it is changed. It provides two reactive
+“event”-attributes: <cite>__action_start__</cite> is set before the list is changed,
+and <cite>__action_end__</cite> is set after the list has changed.</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">ContainerObserver</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">subject</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos"> 4</span><span class="gp">... </span>    
+<span class="linenos"> 5</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_print_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos"> 7</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;action start:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">__action_start__</span><span class="p">)</span>
+<span class="linenos"> 8</span><span class="gp">... </span>    
+<span class="linenos"> 9</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos">10</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_print_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">11</span><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;action end:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">__action_end__</span><span class="p">)</span>
+<span class="linenos">12</span><span class="gp">... </span>
+<span class="linenos">13</span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">larch.reactive.rcollections</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="linenos">14</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span> <span class="o">=</span> <span class="n">List</span><span class="p">()</span>
+<span class="linenos">15</span><span class="gp">&gt;&gt;&gt; </span><span class="n">observer</span> <span class="o">=</span> <span class="n">ContainerObserver</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">container</span><span class="p">)</span>
+<span class="linenos">16</span><span class="go">action start: None</span>
+<span class="linenos">17</span><span class="go">action end: None</span>
+<span class="linenos">18</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">19</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="linenos">20</span><span class="go">action start: (&#39;insert&#39;, (0, 1))</span>
+<span class="linenos">21</span><span class="go">action end: (&#39;insert&#39;, (0, 1))</span>
+<span class="linenos">22</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">23</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="linenos">24</span><span class="go">action start: (&#39;change&#39;, (slice(0, 1, None), [2]))</span>
+<span class="linenos">25</span><span class="go">action end: (&#39;change&#39;, (slice(0, 1, None), [2]))</span>
+<span class="linenos">26</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">27</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="linenos">28</span><span class="go">action start: (&#39;change&#39;, (slice(0, 1, None), [1, 2, 3]))</span>
+<span class="linenos">29</span><span class="go">action end: (&#39;change&#39;, (slice(0, 1, None), [1, 2, 3]))</span>
+<span class="linenos">30</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">31</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<span class="linenos">32</span><span class="go">action start: (&#39;order&#39;, &#39;reverse&#39;)</span>
+<span class="linenos">33</span><span class="go">action end: (&#39;order&#39;, &#39;reverse&#39;)</span>
+<span class="linenos">34</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">35</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+<span class="linenos">36</span><span class="go">action start: (&#39;order&#39;, &#39;sort&#39;)</span>
+<span class="linenos">37</span><span class="go">action end: (&#39;order&#39;, &#39;sort&#39;)</span>
+<span class="linenos">38</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">39</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span> <span class="o">+=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+<span class="linenos">40</span><span class="go">action start: (&#39;extend&#39;, [4, 5, 6])</span>
+<span class="linenos">41</span><span class="go">action end: (&#39;extend&#39;, [4, 5, 6])</span>
+<span class="linenos">42</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">43</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span> <span class="o">*=</span> <span class="mi">2</span>
+<span class="linenos">44</span><span class="go">action start: (&#39;imul&#39;, 2)</span>
+<span class="linenos">45</span><span class="go">action end: (&#39;imul&#39;, 2)</span>
+<span class="linenos">46</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">47</span><span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">container</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+<span class="linenos">48</span><span class="go">action start: (&#39;delete&#39;, slice(2, 10, None))</span>
+<span class="linenos">49</span><span class="go">action end: (&#39;delete&#39;, slice(2, 10, None))</span>
+</pre></div>
+</div>
+<p>The example shows what you have to expect in the action attributes:
+Their value is always None, if no event occurs. When the list is changed
+first <cite>__action_start__</cite> is fired than <cite>__action_end__</cite> is fired.
+The event is always a pair with the event type at the first place and
+informations about the event in the second place.</p>
+</section>
+<section id="dict">
+<h3><code class="xref py py-func docutils literal notranslate"><span class="pre">Dict()</span></code><a class="headerlink" href="#dict" title="Link to this heading">¶</a></h3>
+<p>Equally to List Dict is a reactive dictionary. It provides two reactive
+“event”-attributes: <cite>__action_start__</cite> is set before the dictionary is
+changed, and <cite>__action_end__</cite> is set after the list has changed.</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">larch.reactive.rcollections</span> <span class="kn">import</span> <span class="n">Dict</span>
+<span class="linenos"> 2</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">()</span>
+<span class="linenos"> 3</span><span class="gp">&gt;&gt;&gt; </span><span class="n">observer</span> <span class="o">=</span> <span class="n">ContainerObserver</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">container</span><span class="p">)</span>
+<span class="linenos"> 4</span><span class="go">action start: None</span>
+<span class="linenos"> 5</span><span class="go">action end: None</span>
+<span class="linenos"> 6</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos"> 7</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;one&quot;</span>
+<span class="linenos"> 8</span><span class="go">action start: (&#39;change&#39;, (1, &#39;one&#39;))</span>
+<span class="linenos"> 9</span><span class="go">action end: (&#39;change&#39;, (1, &#39;one&#39;))</span>
+<span class="linenos">10</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">11</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;two&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;three&quot;</span><span class="p">})</span>
+<span class="linenos">12</span><span class="go">action start: (&#39;update&#39;, (({2: &#39;two&#39;, 3: &#39;three&#39;},), {}))</span>
+<span class="linenos">13</span><span class="go">action end: (&#39;update&#39;, (({2: &#39;two&#39;, 3: &#39;three&#39;},), {}))</span>
+<span class="linenos">14</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">15</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span><span class="o">.</span><span class="n">popitem</span><span class="p">()</span>
+<span class="linenos">16</span><span class="go">action start: (&#39;delete&#39;, 1)</span>
+<span class="linenos">17</span><span class="go">action end: (&#39;delete&#39;, 1)</span>
+<span class="linenos">18</span><span class="go">(1, &#39;one&#39;)</span>
+<span class="linenos">19</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="linenos">20</span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+<span class="linenos">21</span><span class="go">action start: (&#39;clear&#39;, None)</span>
+<span class="linenos">22</span><span class="go">action end: (&#39;clear&#39;, None)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="pickle">
+<h2>Pickle<a class="headerlink" href="#pickle" title="Link to this heading">¶</a></h2>
+<p>The reactive base class <a class="reference internal" href="reference.html#larch.reactive.SimpleReactive" title="larch.reactive.SimpleReactive"><code class="xref py py-func docutils literal notranslate"><span class="pre">SimpleReactive()</span></code></a> defines
+the standard pickle methods <cite>__getstate__</cite> and <cite>__setstate__</cite> to pickle
+the cells values by default.</p>
+</section>
+<section id="threading">
+<h2>Threading<a class="headerlink" href="#threading" title="Link to this heading">¶</a></h2>
+<p>Reactive classes are not thread save but the state of an
+<code class="xref py py-class docutils literal notranslate"><span class="pre">ReactiveContext</span></code> is thread local.</p>
+<p>This means: As long every <code class="xref py py-class docutils literal notranslate"><span class="pre">Reactive</span></code> object is used by only one thread
+you can work with several isolated threads. In Microsoft COM this is called
+Apartment Threading Model.</p>
+</section>
+<section id="bend-debugging-helpers">
+<h2><a class="reference internal" href="_images/db.gif"><img alt="bend" src="_images/db.gif" style="width: 1em;" /></a> Debugging Helpers<a class="headerlink" href="#bend-debugging-helpers" title="Link to this heading">¶</a></h2>
+<p>Sometimes you got stuck, wondering why a rule is called. (Often because
+the <a class="reference internal" href="#bestpractice"><span class="std std-ref">best practice tips</span></a> have been ignored). <cite>larch.reactive</cite> provides
+some helper functions to find out what is going on:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="linenos"> 2</span><span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LARCH_REACTIVE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span>
+<span class="linenos"> 3</span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">larch.reactive</span> <span class="k">as</span> <span class="nn">ra</span>
+<span class="linenos"> 4</span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">larch.reactive.debug</span> <span class="k">as</span> <span class="nn">debug</span>
+<span class="linenos"> 5</span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="linenos"> 6</span><span class="gp">&gt;&gt;&gt;</span>
+<span class="linenos"> 7</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
+<span class="linenos"> 8</span><span class="gp">... </span><span class="k">class</span> <span class="nc">Task</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="linenos"> 9</span><span class="gp">... </span>    <span class="n">start</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+<span class="linenos">10</span><span class="gp">... </span>    <span class="n">end</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos">11</span><span class="gp">... </span>    <span class="n">duration</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+<span class="linenos">12</span><span class="gp">... </span>    <span class="n">prev</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">()</span>
+<span class="linenos">13</span><span class="gp">... </span>    <span class="n">desc</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="linenos">14</span><span class="gp">...</span>
+<span class="linenos">15</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos">16</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">17</span><span class="gp">... </span>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev</span><span class="p">:</span>
+<span class="linenos">18</span><span class="gp">... </span>            <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev</span><span class="o">.</span><span class="n">end</span>
+<span class="linenos">19</span><span class="gp">...</span>
+<span class="linenos">20</span><span class="gp">... </span>    <span class="nd">@ra</span><span class="o">.</span><span class="n">rule</span>
+<span class="linenos">21</span><span class="gp">... </span>    <span class="k">def</span> <span class="nf">_rule_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">22</span><span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+<span class="linenos">23</span><span class="gp">...</span>
+<span class="linenos">24</span><span class="gp">... </span>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">25</span><span class="gp">... </span>        <span class="k">return</span> <span class="s2">&quot;&#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">desc</span><span class="p">)</span>
+<span class="linenos">26</span><span class="gp">...</span>
+<span class="linenos">27</span><span class="gp">&gt;&gt;&gt; </span><span class="n">read</span> <span class="o">=</span> <span class="n">Task</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s2">&quot;read tutorial&quot;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+<span class="linenos">28</span><span class="gp">... </span>            <span class="n">duration</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="linenos">29</span><span class="gp">&gt;&gt;&gt; </span><span class="n">write</span> <span class="o">=</span> <span class="n">Task</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s2">&quot;write own programs&quot;</span><span class="p">,</span> <span class="n">prev</span><span class="o">=</span><span class="n">read</span><span class="p">)</span>
+<span class="linenos">30</span><span class="gp">&gt;&gt;&gt;</span>
+<span class="linenos">31</span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">debug</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">read</span><span class="p">))</span>
+<span class="linenos">32</span><span class="go">cells of &#39;read tutorial&#39;</span>
+<span class="linenos">33</span><span class="go">  start(Cell-5726ac8)</span>
+<span class="linenos">34</span><span class="go">    &lt;Rule _rule_end(0, 2) of &#39;read tutorial&#39;&gt;(5826598)</span>
+<span class="linenos">35</span><span class="go">  end(Cell-5726cc8)</span>
+<span class="linenos">36</span><span class="go">    &lt;Rule _rule_start(0, 3) of &#39;write own programs&#39;&gt;(58266d8)</span>
+<span class="linenos">37</span><span class="go">  duration(Cell-57268c8)</span>
+<span class="linenos">38</span><span class="go">    &lt;Rule _rule_end(0, 2) of &#39;read tutorial&#39;&gt;(5826598)</span>
+<span class="linenos">39</span><span class="go">  prev(Cell-5726a48)</span>
+<span class="linenos">40</span><span class="go">    &lt;Rule _rule_start(0, 1) of &#39;read tutorial&#39;&gt;(5826548)</span>
+</pre></div>
+</div>
+<p>The <cite>dump</cite> function of larch.reactive.debug inspects a reactive object
+and prints for each cell the rules depending on that cell.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><cite>larch.reactive</cite> has a fast cython implementation that is imported by default, and
+a pure python implementation as fallback. The debugging helpers only work
+with the pure python implementation! Setting
+<cite>os.environ[“LARCH_REACTIVE”] = “python”</cite> before(!) <cite>import larch.reactive</cite>
+will force to use the pure python version.</p>
+</div>
+<p>Within a <cite>debug</cite> context you atomic action are logged to a stream
+(by default sys.stderr)</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># from io import StringIO</span>
+<span class="linenos"> 2</span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span> <span class="k">as</span> <span class="n">StringIO</span>
+<span class="linenos"> 3</span><span class="gp">&gt;&gt;&gt; </span><span class="n">out</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+<span class="linenos"> 4</span><span class="gp">&gt;&gt;&gt;</span>
+<span class="linenos"> 5</span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">debug</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">output</span><span class="o">=</span><span class="n">out</span><span class="p">):</span>
+<span class="linenos"> 6</span><span class="gp">... </span>    <span class="n">read</span><span class="o">.</span><span class="n">start</span> <span class="o">+=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="linenos"> 7</span><span class="gp">...</span>
+<span class="linenos"> 8</span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">getvalue</span><span class="p">())</span>
+<span class="linenos"> 9</span><span class="go">emit(1) &lt;console&gt;(2): &#39;&#39;</span>
+<span class="linenos">10</span><span class="go">  (&lt;Rule _rule_end(0, 2) of &#39;read tutorial&#39;&gt;,)</span>
+<span class="linenos">11</span>
+<span class="linenos">12</span><span class="go">call rule &lt;Rule _rule_end(0, 5) of &#39;read tutorial&#39;&gt;</span>
+<span class="linenos">13</span><span class="go">  touch (&#39;read tutorial&#39;.&lt;Cell start(1/0)&gt;)</span>
+<span class="linenos">14</span><span class="go">    _rule_end in &lt;console&gt;(16): &#39;&#39;</span>
+<span class="linenos">15</span>
+<span class="linenos">16</span><span class="go">  touch (&#39;read tutorial&#39;.&lt;Cell duration(0/2)&gt;)</span>
+<span class="linenos">17</span><span class="go">    _rule_end in &lt;console&gt;(16): &#39;&#39;</span>
+<span class="linenos">18</span>
+<span class="linenos">19</span><span class="go">    emit(2) &lt;console&gt;(16): &#39;&#39;</span>
+<span class="linenos">20</span><span class="go">      (&lt;Rule _rule_start(0, 3) of &#39;write own programs&#39;&gt;,)</span>
+<span class="linenos">21</span>
+<span class="linenos">22</span>
+<span class="linenos">23</span><span class="go">call rule &lt;Rule _rule_start(0, 6) of &#39;write own programs&#39;&gt;</span>
+<span class="linenos">24</span><span class="go">  touch (&#39;write own programs&#39;.&lt;Cell prev(2/3)&gt;)</span>
+<span class="linenos">25</span><span class="go">    _rule_start in &lt;console&gt;(11): &#39;&#39;</span>
+<span class="linenos">26</span>
+<span class="linenos">27</span><span class="go">  touch (&#39;write own programs&#39;.&lt;Cell prev(2/3)&gt;)</span>
+<span class="linenos">28</span><span class="go">    _rule_start in &lt;console&gt;(12): &#39;&#39;</span>
+<span class="linenos">29</span>
+<span class="linenos">30</span><span class="go">  touch (&#39;read tutorial&#39;.&lt;Cell end(3/1)&gt;)</span>
+<span class="linenos">31</span><span class="go">    _rule_start in &lt;console&gt;(12): &#39;&#39;</span>
+<span class="linenos">32</span>
+<span class="linenos">33</span><span class="go">    emit(2) &lt;console&gt;(12): &#39;&#39;</span>
+<span class="linenos">34</span><span class="go">      (&lt;Rule _rule_end(0, 4) of &#39;write own programs&#39;&gt;,)</span>
+<span class="linenos">35</span>
+<span class="linenos">36</span>
+<span class="linenos">37</span><span class="go">call rule &lt;Rule _rule_end(0, 7) of &#39;write own programs&#39;&gt;</span>
+<span class="linenos">38</span><span class="go">  touch (&#39;write own programs&#39;.&lt;Cell start(1/0)&gt;)</span>
+<span class="linenos">39</span><span class="go">    _rule_end in &lt;console&gt;(16): &#39;&#39;</span>
+<span class="linenos">40</span>
+<span class="linenos">41</span><span class="go">  touch (&#39;write own programs&#39;.&lt;Cell duration(0/2)&gt;)</span>
+<span class="linenos">42</span><span class="go">    _rule_end in &lt;console&gt;(16): &#39;&#39;</span>
+<span class="linenos">43</span>
+<span class="linenos">44</span>
+<span class="linenos">45</span>
+</pre></div>
+</div>
+<p>This is how you have to read the output:</p>
+<dl class="simple">
+<dt>Line 9:</dt><dd><p>The “emit” commands says that some reactive rules will be called.
+In a real program you will see the source file name and line instead of
+<cite>&lt;console&gt;(2): ‘’</cite>.
+The embraced number is the atomic context recursion level: 1 is the outer
+most.</p>
+</dd>
+<dt>Line 10:</dt><dd><p>After each emit command a list of rules to be called is printed.</p>
+</dd>
+<dt>Line 12:</dt><dd><p>“call rule” is printed when a rule is executed, followed by some informations
+about the rule. After a call rule an indented block of actions inside the
+rule is printed.</p>
+</dd>
+<dt>Line 13-14:</dt><dd><p>“touch” indicates the acces of a cell that binds the rule to the cell. (Here
+the cell <cite>start</cite> of the “read tutorial” task). The Line is followed by a
+traceback.</p>
+</dd>
+<dt>Line 19:</dt><dd><p>Inside <cite>_rule_end</cite> <cite>_rule_start</cite> is emitted.</p>
+</dd>
+</dl>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Larch-Reactive by Examples</a><ul>
+<li><a class="reference internal" href="#creating-reactive-classes-cells-rules">Creating Reactive Classes, Cells, Rules</a><ul>
+<li><a class="reference internal" href="#bend-internals-of-write"> Internals of <cite>write</cite></a></li>
+<li><a class="reference internal" href="#bend-object-interaction"> Object interaction</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cell-types">Cell types</a></li>
+<li><a class="reference internal" href="#pointers">Pointers</a><ul>
+<li><a class="reference internal" href="#trivial-delegator">Trivial Delegator</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#contexts">Contexts</a><ul>
+<li><a class="reference internal" href="#atomic"><code class="xref py py-func docutils literal notranslate"><span class="pre">atomic()</span></code></a></li>
+<li><a class="reference internal" href="#untouched"><code class="xref py py-func docutils literal notranslate"><span class="pre">untouched()</span></code></a></li>
+<li><a class="reference internal" href="#silent"><code class="xref py py-func docutils literal notranslate"><span class="pre">silent()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#yield-rules">yield rules</a></li>
+<li><a class="reference internal" href="#rule-order">Rule Order</a></li>
+<li><a class="reference internal" href="#agents">Agents</a><ul>
+<li><a class="reference internal" href="#old"><code class="xref py py-func docutils literal notranslate"><span class="pre">old()</span></code></a></li>
+<li><a class="reference internal" href="#cell"><code class="xref py py-func docutils literal notranslate"><span class="pre">cell()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#collections">Collections</a><ul>
+<li><a class="reference internal" href="#list"><code class="xref py py-func docutils literal notranslate"><span class="pre">List()</span></code></a></li>
+<li><a class="reference internal" href="#dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">Dict()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pickle">Pickle</a></li>
+<li><a class="reference internal" href="#threading">Threading</a></li>
+<li><a class="reference internal" href="#bend-debugging-helpers"> Debugging Helpers</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="index.html"
+                          title="previous chapter">Welcome to <cite>larch.reactive</cite>’s documentation!</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="reference.html"
+                          title="next chapter">Library Reference</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/examples.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="Library Reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to larch.reactive’s documentation!"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">larch.reactive 3.6.2235 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Larch-Reactive by Examples</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2011, Michael Reithinger.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    </div>
+  </body>
+</html>

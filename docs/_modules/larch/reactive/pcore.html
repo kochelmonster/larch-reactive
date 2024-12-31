@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>larch.reactive.pcore &#8212; larch.reactive 3.6.2235 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=34905f61" />
+    <script src="../../../_static/documentation_options.js?v=1e710abd"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">larch.reactive 3.6.2235 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">larch.reactive.pcore</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for larch.reactive.pcore</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains the core functionality of larch.reactive.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">from</span> <span class="nn">bisect</span> <span class="kn">import</span> <span class="n">insort_left</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span><span class="p">,</span> <span class="n">update_wrapper</span>
+<span class="kn">from</span> <span class="nn">weakref</span> <span class="kn">import</span> <span class="n">ref</span>
+
+<span class="n">pointer_itemgetter</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">itemgetter</span>
+<span class="n">pointer_attrgetter</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span>
+
+
+<span class="c1"># __pragma__ (&#39;ecom&#39;)</span>
+<span class="sd">&quot;&quot;&quot;?</span>
+<span class="sd">class LocalContext:</span>
+<span class="sd">    pass</span>
+
+
+<span class="sd">class GreenletExit(BaseException):</span>
+<span class="sd">    pass</span>
+<span class="sd">?&quot;&quot;&quot;</span>
+
+<span class="c1"># __pragma__ (&#39;skip&#39;)</span>
+<span class="n">pointer_attrgetter</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">pointer_attrgetter</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">))</span>  <span class="c1"># for pypy</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">gevent</span> <span class="kn">import</span> <span class="n">GreenletExit</span>
+    <span class="kn">from</span> <span class="nn">gevent.local</span> <span class="kn">import</span> <span class="n">local</span> <span class="k">as</span> <span class="n">LocalContext</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">class</span> <span class="nc">GreenletExit</span><span class="p">(</span><span class="ne">BaseException</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">local</span> <span class="k">as</span> <span class="n">LocalContext</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;rcontext&quot;</span><span class="p">,</span> <span class="s2">&quot;CellBase&quot;</span><span class="p">,</span> <span class="s2">&quot;ReactiveState&quot;</span><span class="p">,</span> <span class="s2">&quot;Subject&quot;</span><span class="p">,</span> <span class="s2">&quot;Container&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;ResetContainer&quot;</span><span class="p">,</span> <span class="s2">&quot;Rule&quot;</span><span class="p">,</span> <span class="s2">&quot;IterRule&quot;</span><span class="p">,</span> <span class="s2">&quot;pointer_attrgetter&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;pointer_itemgetter&quot;</span><span class="p">,</span> <span class="s2">&quot;pointer_resolve&quot;</span><span class="p">,</span> <span class="s2">&quot;ReactiveWarning&quot;</span><span class="p">)</span>
+<span class="c1"># __pragma__ (&#39;noskip&#39;)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;larch.reactive&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">pointer_resolve</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">accessors</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">y</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">accessors</span><span class="p">,</span> <span class="n">root</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">DecoratorContext</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A base class for objects that can be used</span>
+<span class="sd">    as decorators and as contexts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="c1"># __pragma__(&quot;kwargs&quot;)</span>
+    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>  <span class="c1"># transcript bug</span>
+    <span class="c1"># __pragma__(&quot;nokwargs&quot;)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="c1"># __pragma__(&quot;kwargs&quot;)</span>
+        <span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># __pragma__(&quot;nokwargs&quot;)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">update_wrapper</span><span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">decorated</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">class</span> <span class="nc">AtomicDecoratorContext</span><span class="p">(</span><span class="n">DecoratorContext</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The atomic decorator context. Rules will be executed at the end of</span>
+<span class="sd">    the context.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">_atomic_start</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">_atomic_end</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">class</span> <span class="nc">SilentDecoratorContext</span><span class="p">(</span><span class="n">DecoratorContext</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The silent decorator context. Within this context a change of a cell</span>
+<span class="sd">    will not trigger any rules.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;old_notify&quot;</span><span class="p">,</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># the atomic context ensures that silent will not influence</span>
+        <span class="c1"># other greenlets</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">_atomic_start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_notify</span> <span class="o">=</span> <span class="n">rcontext</span><span class="o">.</span><span class="n">notify</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">notify</span> <span class="o">=</span> <span class="n">rcontext</span><span class="o">.</span><span class="n">_dumy_notify</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">notify</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_notify</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">_atomic_end</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">class</span> <span class="nc">UntouchedDecoratorContext</span><span class="p">(</span><span class="n">DecoratorContext</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The untouched decorator context. This context makes only sense within</span>
+<span class="sd">    rules. Within this context no cell will be touched.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;old_touch&quot;</span><span class="p">,</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_touch</span> <span class="o">=</span> <span class="n">rcontext</span><span class="o">.</span><span class="n">touch</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">touch</span> <span class="o">=</span> <span class="n">rcontext</span><span class="o">.</span><span class="n">_dumy_touch</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">touch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_touch</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">class</span> <span class="nc">TouchedDecoratorContext</span><span class="p">(</span><span class="n">DecoratorContext</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The touch decorator context. The context makes only sense within</span>
+<span class="sd">    a untouched context. Within this context cells will be touched again.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;old_touch&quot;</span><span class="p">,</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_touch</span> <span class="o">=</span> <span class="n">rcontext</span><span class="o">.</span><span class="n">touch</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">touch</span> <span class="o">=</span> <span class="n">rcontext</span><span class="o">.</span><span class="n">_touch</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">touch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_touch</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">class</span> <span class="nc">ReactiveWarning</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="ReactiveContext">
+<a class="viewcode-back" href="../../../reference.html#larch.reactive.pcore.ReactiveContext">[docs]</a>
+<span class="k">class</span> <span class="nc">ReactiveContext</span><span class="p">(</span><span class="n">LocalContext</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A ReactiveContext is the core driver for reactive behaviour.</span>
+<span class="sd">    It manages the subject - observer relation between cells and rules,</span>
+<span class="sd">    and cares for the execution order of rules.</span>
+
+<span class="sd">    Only one ReativeContext exists in a program that can be accessed by:</span>
+
+<span class="sd">    &gt;&gt;&gt; larch.reactive.rcontext</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atomic_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atomic_start_round</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_call_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_observer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">touch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dumy_touch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">notify</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notify</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_values</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># the subject values before an atomic operation.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">observers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># all observers in the active atomic operation in their call order</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">observer_count</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># how often is one observer in the observers list</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
+        <span class="c1"># sequence of all callbacks to notify the end of notification process,</span>
+        <span class="c1"># transformed from set to list to keep the callbacks order.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">atomic</span> <span class="o">=</span> <span class="n">AtomicDecoratorContext</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">untouched</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;UntouchedDectoratorContext: a new context.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">UntouchedDecoratorContext</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">touched</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;TouchedDecoratorContext: a new context.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">TouchedDecoratorContext</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">silent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;SilentDecoratorContext: a new context.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">SilentDecoratorContext</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: the count of atomic operations, since program start.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_start_round</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">transaction_level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: count of recursive atomic operations.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_count</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">inside_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: `True` if the current frame is inside a rule.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_observer</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">inside_touch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: `True` if the current frame is inside a touch context.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">touch</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_touch</span>
+
+    <span class="k">def</span> <span class="nf">_atomic_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atomic_start_round</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_counter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atomic_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_atomic_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_count</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atomic_count</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">return</span>
+
+        <span class="c1"># self.atomic_count == 1</span>
+        <span class="n">observers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observers</span>
+        <span class="n">observer_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observer_count</span>
+        <span class="n">greenlet_exit</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># execute rules</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># a &quot;for o in observers&quot; loop is not possible</span>
+            <span class="c1"># observer.notify() can change new cells and modify</span>
+            <span class="c1"># the observers list</span>
+            <span class="c1"># the following lines correctly run the testcases</span>
+            <span class="c1"># test_renew_cell and test_one_run in test_reactive.py</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">):</span>  <span class="c1"># avoid an infinite loop</span>
+                <span class="c1"># __pragma__ (&#39;tconv&#39;)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">observers</span><span class="p">:</span>
+                    <span class="n">observer_count</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                    <span class="k">break</span>
+                <span class="c1"># __pragma__ (&#39;notconv&#39;)</span>
+
+                <span class="c1"># observers are sorted in reverse order</span>
+                <span class="n">observer</span> <span class="o">=</span> <span class="n">observers</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                <span class="n">key_observer</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">observer</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">observer_count</span><span class="p">[</span><span class="n">key_observer</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">observer_count</span><span class="p">[</span><span class="n">key_observer</span><span class="p">]</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">observer</span><span class="o">.</span><span class="n">notify</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="n">GreenletExit</span><span class="p">:</span>
+                        <span class="n">greenlet_exit</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span>
+                            <span class="s2">&quot;GreenletExit during observer notification&quot;</span><span class="p">,</span> <span class="n">stack_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># this observer occurs multiple times. Only call the</span>
+                    <span class="c1"># latest occurence</span>
+                    <span class="n">observer_count</span><span class="p">[</span><span class="n">key_observer</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="n">exp</span> <span class="o">=</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;possible endless recursion </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">observers</span><span class="p">))</span>
+                <span class="k">del</span> <span class="n">observers</span><span class="p">[:]</span>
+                <span class="n">observer_count</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="n">exp</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atomic_count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">active_greenlet</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">old_values</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="n">greenlet_exit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_callbacks</span><span class="p">(</span><span class="n">greenlet_exit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">greenlet_exit</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">GreenletExit</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_execute_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greenlet_exit</span><span class="p">):</span>
+        <span class="n">callbacks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">callbacks</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">c</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># __pragma__ (&#39;skip&#39;)</span>
+                <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+                <span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">format_full_exception_tb</span>
+                <span class="n">tb</span> <span class="o">=</span> <span class="n">format_full_exception_tb</span><span class="p">()</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;Exception while executing callback: &quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="si">{1}</span><span class="s1">&#39;</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span><span class="p">),</span> <span class="n">ReactiveWarning</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Exception while executing callback </span><span class="si">%r</span><span class="s2">: </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">stack_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># __pragma__ (&#39;noskip&#39;)</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;?</span>
+<span class="sd">                console.trace(&quot;Exception while executing callback&quot;, repr(e), repr(c), e.stack)</span>
+<span class="sd">                ?&quot;&quot;&quot;</span>
+            <span class="k">except</span> <span class="n">GreenletExit</span><span class="p">:</span>
+                <span class="n">greenlet_exit</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;GreenletExit while executing callback </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">stack_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">greenlet_exit</span>
+
+    <span class="k">def</span> <span class="nf">rule_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">old_touch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">touch</span>
+        <span class="n">old_observer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_observer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_observer</span> <span class="o">=</span> <span class="n">rule</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">touch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_touch</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">rule</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">GreenletExit</span><span class="p">:</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># __pragma__ (&#39;skip&#39;)</span>
+            <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+            <span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">format_full_exception_tb</span>
+            <span class="n">tb</span> <span class="o">=</span> <span class="n">format_full_exception_tb</span><span class="p">()</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;Exception while calling rule &quot;</span><span class="si">{0}</span><span class="s1">(</span><span class="si">{1!r}</span><span class="s1">, </span><span class="si">{2!r}</span><span class="s1">)&quot;: &quot;</span><span class="si">{3!r}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="si">{4}</span><span class="s1">&#39;</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span><span class="p">),</span> <span class="n">ReactiveWarning</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Exception while calling rule </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">stack_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># __pragma__ (&#39;noskip&#39;)</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;?</span>
+<span class="sd">            console.trace(&quot;Exception while calling rule&quot;, repr(e), repr(rule), e.stack)</span>
+<span class="sd">            ?&quot;&quot;&quot;</span>
+
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">touch</span> <span class="o">=</span> <span class="n">old_touch</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_observer</span> <span class="o">=</span> <span class="n">old_observer</span>
+
+    <span class="k">def</span> <span class="nf">_notify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">old_value</span><span class="p">):</span>
+        <span class="n">id_subject</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">subject</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_values</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">id_subject</span><span class="p">,</span> <span class="n">old_value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">subject</span><span class="o">.</span><span class="n">get_observers</span><span class="p">())</span>
+        <span class="n">subject</span><span class="o">.</span><span class="n">clear_observers</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_dumy_notify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">old_value</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observers</span><span class="p">):</span>
+        <span class="n">my_observers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observers</span>
+        <span class="n">my_observer_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observer_count</span>
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">observers</span><span class="p">:</span>
+            <span class="n">insort_left</span><span class="p">(</span><span class="n">my_observers</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span>
+            <span class="n">ko</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+            <span class="n">my_observer_count</span><span class="p">[</span><span class="n">ko</span><span class="p">]</span> <span class="o">=</span> <span class="n">my_observer_count</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ko</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">push_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction_level</span> <span class="k">else</span> <span class="n">callback</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">shift_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">appendleft</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction_level</span> <span class="k">else</span> <span class="n">callback</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">call_counter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_call_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_counter</span>
+
+    <span class="k">def</span> <span class="nf">_touch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">):</span>
+        <span class="n">subject</span><span class="o">.</span><span class="n">add_observer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_observer</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_dumy_touch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<span class="n">rcontext</span> <span class="o">=</span> <span class="n">ReactiveContext</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">Observer</span><span class="p">:</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;last_call&quot;</span><span class="p">,</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">notify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">pass</span>  <span class="c1"># pragma: no cover</span>
+
+    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="c1"># observers are sorted in reverse order!</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">level</span>
+                <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">level</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_call</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">last_call</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">level</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_call</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">last_call</span>
+
+
+<span class="k">class</span> <span class="nc">IterRule</span><span class="p">(</span><span class="n">Observer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A Rule represents a `rule` instance method of a reactive class&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;level&quot;</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="s2">&quot;holder&quot;</span><span class="p">,</span> <span class="s2">&quot;__weakref__&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">holder</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">last_call</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">holder</span> <span class="o">=</span> <span class="n">holder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_call</span> <span class="o">=</span> <span class="n">last_call</span>
+
+    <span class="k">def</span> <span class="nf">notify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(),</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_call</span> <span class="o">=</span> <span class="n">rcontext</span><span class="o">.</span><span class="n">call_counter</span><span class="p">()</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">rule_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">holder</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;Rule obsolete </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">last_call</span><span class="si">}</span><span class="s2">)&gt;&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;Rule </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">last_call</span><span class="si">}</span><span class="s2">) of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">holder</span><span class="p">()</span><span class="si">!r}</span><span class="s2">&gt;&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">holder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">holder</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">holder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">call_iterator</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="nb">next</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
+                    <span class="n">rcontext</span><span class="o">.</span><span class="n">push_callback</span><span class="p">(</span><span class="n">call_iterator</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">!=</span> <span class="p">(</span><span class="s1">&#39;generator raised StopIteration&#39;</span><span class="p">,):</span>
+                        <span class="k">raise</span>
+
+            <span class="n">call_iterator</span><span class="p">()</span>  <span class="c1"># __: skip</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;?</span>
+<span class="sd">            if iterator:</span>
+<span class="sd">                call_iterator()</span>
+<span class="sd">            ?&quot;&quot;&quot;</span>
+
+
+<span class="c1"># __pragma__ (&#39;skip&#39;)</span>
+<span class="k">class</span> <span class="nc">Rule</span><span class="p">(</span><span class="n">IterRule</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">holder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">holder</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">holder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="k">pass</span>
+<span class="c1"># __pragma__ (&#39;noskip&#39;)</span>
+
+
+<span class="k">class</span> <span class="nc">Subject</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An observer&#39;s subject</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;_observers&quot;</span><span class="p">,</span> <span class="s2">&quot;_last_counter&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A set of observers that will be called when the subjects value changes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_counter</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The variable is used to check if a observer still depends on this</span>
+<span class="sd">        subject if observer.last_call &gt; self._last_counter ==&gt; the observer</span>
+<span class="sd">        does not depend anymore.</span>
+<span class="sd">        (see TestReactive.test_decouple of test_reactive.py)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">touch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">touch</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># __pragma__ (&#39;tconv&#39;)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="p">:</span>
+            <span class="n">rcontext</span><span class="o">.</span><span class="n">atomic</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">rcontext</span><span class="o">.</span><span class="n">notify</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">old_value</span><span class="p">)</span>
+        <span class="c1"># __pragma__ (&#39;notconv&#39;)</span>
+
+    <span class="k">def</span> <span class="nf">take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;takes over the attributes of another subject&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_observers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_counter</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_counter</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">_last_counter</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_observers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the subject&#39;s observers&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_observers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">filter_observers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observers</span><span class="p">):</span>
+        <span class="n">last_counter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_counter</span>
+        <span class="n">observers</span> <span class="o">=</span> <span class="p">(</span><span class="n">o</span><span class="p">()</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">observers</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">o</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">observers</span> <span class="k">if</span> <span class="n">o</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">o</span><span class="o">.</span><span class="n">last_call</span> <span class="o">&lt;=</span> <span class="n">last_counter</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">add_observer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observer</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">observer</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_counter</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">observer</span><span class="o">.</span><span class="n">last_call</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_counter</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">observer</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="n">observer</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">clear_observers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+<span class="k">def</span> <span class="nf">_cell_to_container</span><span class="p">(</span><span class="n">reactive</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">create_container</span><span class="p">(</span><span class="n">reactive</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">reactive</span><span class="o">.</span><span class="n">__reactive_cells__</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+
+
+<span class="k">class</span> <span class="nc">_NOVAL</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+
+<span class="k">def</span> <span class="nf">_state_from_dict</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">reactive</span><span class="p">,</span> <span class="n">dict_</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">reactive</span><span class="o">.</span><span class="n">__reactive_cells__</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">dict_</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">_NOVAL</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_NOVAL</span><span class="p">:</span>
+            <span class="n">state</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">val</span>
+
+
+<span class="k">def</span> <span class="nf">_state_as_dict</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">reactive</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">reactive</span><span class="o">.</span><span class="n">__reactive_cells__</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">_value</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="c1"># __pragma__ (&#39;skip&#39;)</span>
+<span class="k">class</span> <span class="nc">ReactiveState</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The state of a reactive objects. Contains all cell container.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reactive</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">_cell_to_container</span><span class="p">(</span><span class="n">reactive</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reactive</span><span class="p">,</span> <span class="n">dict_</span><span class="p">):</span>
+        <span class="n">_state_from_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reactive</span><span class="p">,</span> <span class="n">dict_</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reactive</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_state_as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reactive</span><span class="p">)</span>
+<span class="c1"># __pragma__ (&#39;noskip&#39;)</span>
+
+
+<span class="sd">&quot;&quot;&quot;?</span>
+<span class="sd">__pragma__(&quot;js&quot;, &quot;{}&quot;, &#39;&#39;&#39;</span>
+
+<span class="sd">var ReactiveState_ = function(reactive) {</span>
+<span class="sd">    this.push.apply(this, _cell_to_container(reactive));</span>
+<span class="sd">    return this</span>
+<span class="sd">}</span>
+<span class="sd">ReactiveState_.prototype = Object.create(Array.prototype);</span>
+<span class="sd">ReactiveState_.prototype.from_dict = function(reactive, dict_) {</span>
+<span class="sd">  _state_from_dict(this, reactive, dict_);</span>
+<span class="sd">}</span>
+<span class="sd">ReactiveState_.prototype.as_dict = function(reactive) {</span>
+<span class="sd">  return _state_as_dict(this, reactive);</span>
+<span class="sd">}</span>
+
+<span class="sd">export var ReactiveState = function(reactive) {</span>
+<span class="sd">    return new ReactiveState_(reactive);</span>
+<span class="sd">}</span>
+
+<span class="sd">ReactiveState_.prototype.__class__ = ReactiveState;</span>
+<span class="sd">deque.__name__ = &#39;ReactiveState&#39;;</span>
+<span class="sd">deque.__bases__ = [list];</span>
+<span class="sd">&#39;&#39;&#39;)</span>
+<span class="sd">?&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="Container">
+<a class="viewcode-back" href="../../../reference.html#larch.reactive.pcore.Container">[docs]</a>
+<span class="k">class</span> <span class="nc">Container</span><span class="p">(</span><span class="n">Subject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A cell container that stores a cell&#39;s value.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;_value&quot;</span><span class="p">,</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="c1"># see ccore.pyx Container.__dealloc__</span>
+        <span class="n">rcontext</span><span class="o">.</span><span class="n">old_values</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Container.set_value">
+<a class="viewcode-back" href="../../../reference.html#larch.reactive.pcore.Container.set_value">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the containers value.&quot;&quot;&quot;</span>
+        <span class="n">old_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="c1"># __pragma__ (&quot;opov&quot;)</span>
+        <span class="k">if</span> <span class="n">old_value</span> <span class="o">!=</span> <span class="n">value</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">old_value</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="c1"># __pragma__ (&quot;noopov&quot;)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">changed</span><span class="p">(</span><span class="n">old_value</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="Container.get_value">
+<a class="viewcode-back" href="../../../reference.html#larch.reactive.pcore.Container.get_value">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the container&#39;s value&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">touch</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;</span><span class="si">{0}</span><span class="s2">(</span><span class="si">{1:x}</span><span class="s2">): </span><span class="si">{2!r}</span><span class="s2">&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">)</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">ResetContainer</span><span class="p">(</span><span class="n">Container</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reset_value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">set_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">old_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">old_value</span> <span class="o">!=</span> <span class="n">value</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">old_value</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">reset</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reset_value</span>
+
+            <span class="k">with</span> <span class="n">rcontext</span><span class="o">.</span><span class="n">atomic</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">changed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reset_value</span><span class="p">)</span>
+                <span class="n">rcontext</span><span class="o">.</span><span class="n">shift_callback</span><span class="p">(</span><span class="n">reset</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">class</span> <span class="nc">CellBase</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A descriptor to assign cell containers to objects.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">)</span>
+    <span class="n">__container__</span> <span class="o">=</span> <span class="n">Container</span>  <span class="c1"># factory</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">__init_cell__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
+
+    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">holder</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">holder</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">return</span> <span class="n">holder</span><span class="o">.</span><span class="n">__reactive_state__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">get_value</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">holder</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">holder</span><span class="o">.</span><span class="n">__reactive_state__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">holder</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">holder</span><span class="o">.</span><span class="n">__reactive_state__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">set_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">holder</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># if we replace the container we have to keep the rules</span>
+        <span class="n">value</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_container</span><span class="p">(</span><span class="n">holder</span><span class="p">))</span>
+        <span class="n">holder</span><span class="o">.</span><span class="n">__reactive_state__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+<span class="c1"># __pragma__ (&#39;noecom&#39;)</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">larch.reactive 3.6.2235 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">larch.reactive.pcore</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2011, Michael Reithinger.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    </div>
+  </body>
+</html>
