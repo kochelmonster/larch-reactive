@@ -58,9 +58,10 @@ jobs:
               repo: context.repo.repo
             });
             console.log(releases);
-            const draftRelease = releases.data.find(release => release.draft);
+            var draftRelease = releases.data.find(release => release.draft);
             if (!draftRelease) {
-              throw new Error('No draft release found');
+              draftRelease = releases[0];
+              // throw new Error('No draft release found');
             }
             core.setOutput('upload_url', draftRelease.upload_url);
 
