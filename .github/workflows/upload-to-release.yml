@@ -1,6 +1,3 @@
-Here is the corrected workflow file to fix the error where the `release_id` is not found:
-
-```yaml
 name: Upload Artifacts to Release
 
 on: workflow_dispatch
@@ -106,4 +103,3 @@ jobs:
           upload-release-files: true
           release-upload-url: ${{ steps.get_release.outputs.upload_url }}
           github-token: ${{ secrets.PAT_UPLOAD }}
-```
