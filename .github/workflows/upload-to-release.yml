@@ -1,17 +1,3 @@
-### Error Analysis:
-The error `Unhandled error: Error: Release ID not found` in the workflow log indicates that the `release_id` is not being correctly retrieved or set. This occurs in the step where the existing assets are being deleted.
-
-### Issue:
-The issue is likely due to the `get_release` step not finding a draft release or any release, resulting in an undefined `release_id`.
-
-### Fix:
-1. **Ensure a Draft Release Exists**:
-   Make sure there is at least one draft release in the repository. If no draft release is found, the workflow should handle this gracefully.
-
-2. **Update Workflow File**:
-   Add logging and handle cases where no draft release or any release is found. Here is the corrected version of the workflow:
-
-```yaml
 name: Upload Artifacts to Release
 
 on: workflow_dispatch
@@ -120,6 +106,3 @@ jobs:
           upload-release-files: true
           release-upload-url: ${{ steps.get_release.outputs.upload_url }}
           github-token: ${{ secrets.PAT_UPLOAD }}
-```
-
-Make these updates and test the workflow to ensure the error is resolved.
