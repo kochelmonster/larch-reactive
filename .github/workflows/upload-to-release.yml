@@ -63,6 +63,26 @@ jobs:
               draftRelease = releases.data[0];
             }
             core.setOutput('upload_url', draftRelease.upload_url);
+            core.setOutput('release_id', draftRelease.id);
+
+      - name: Delete existing assets
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT_UPLOAD }}
+          script: |
+            const release_id = core.getInput('release_id');
+            const assets = await github.rest.repos.listReleaseAssets({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release_id,
+            });
+            for (const asset of assets.data) {
+              await github.rest.repos.deleteReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                asset_id: asset.id,
+              });
+            }
 
       - name: Upload artifacts and release assets
         uses: nanoufo/action-upload-artifacts-and-release-assets@v2
@@ -71,3 +91,4 @@ jobs:
           upload-release-files: true
           release-upload-url: ${{ steps.get_release.outputs.upload_url }}
           github-token: ${{ secrets.PAT_UPLOAD }}
+          
