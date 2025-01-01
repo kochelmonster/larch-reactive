@@ -53,7 +53,7 @@ copyright = u'2011, Michael Reithinger'
 # built documents.
 #
 # The short X.Y version.
-__version__ = "3.6.2235"
+__version__ = "4.0.9"
 
 release = version = __version__
 
