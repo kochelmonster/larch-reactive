@@ -14,6 +14,7 @@ jobs:
         id: get_run
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.PAT_UPLOAD }}
           script: |
             const { data: { workflow_runs } } = await github.rest.actions.listWorkflowRuns({
               owner: context.repo.owner,
