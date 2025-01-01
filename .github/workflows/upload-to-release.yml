@@ -57,6 +57,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo
             });
+            console.log(releases);
             const draftRelease = releases.data.find(release => release.draft);
             if (!draftRelease) {
               throw new Error('No draft release found');
