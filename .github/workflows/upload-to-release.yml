@@ -14,7 +14,7 @@ jobs:
         id: get_run
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.PAT_UPLOAD }}
+          # github-token: ${{ secrets.PAT_UPLOAD }}
           script: |
             const { data: { workflow_runs } } = await github.rest.actions.listWorkflowRuns({
               owner: context.repo.owner,
@@ -33,7 +33,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ steps.get_run.outputs.result }}
-          github-token: ${{ secrets.PAT_UPLOAD }}
+          # github-token: ${{ secrets.PAT_UPLOAD }}
           path: dist
 
       - name: Create artefacts directory
@@ -68,7 +68,7 @@ jobs:
       - name: Delete existing assets
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.PAT_UPLOAD }}
+          # github-token: ${{ secrets.PAT_UPLOAD }}
           script: |
             const release_id = core.getInput('release_id');
             const assets = await github.rest.repos.listReleaseAssets({
@@ -90,5 +90,5 @@ jobs:
           path: artefacts/*
           upload-release-files: true
           release-upload-url: ${{ steps.get_release.outputs.upload_url }}
-          github-token: ${{ secrets.PAT_UPLOAD }}
+          # github-token: ${{ secrets.PAT_UPLOAD }}
           
