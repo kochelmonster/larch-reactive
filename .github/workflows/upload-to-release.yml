@@ -1,0 +1,74 @@
+name: Upload Artifacts to Release
+
+on: workflow_dispatch
+
+jobs:
+  download_and_upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get latest build_wheels workflow run
+        id: get_run
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT_UPLOAD }}
+          script: |
+            const { data: { workflow_runs } } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'build-wheel.yml',
+              status: 'success',
+              per_page: 1
+            });
+            return workflow_runs[0].id;
+
+      - name: Create Dist
+        run: |
+          mkdir -p dist
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.get_run.outputs.result }}
+          github-token: ${{ secrets.PAT_UPLOAD }}
+          path: dist
+
+      - name: Create artefacts directory
+        run: |
+          mkdir -p artefacts
+
+      - name: Copy .whl files to artefacts
+        run: |
+          find dist -name "*.whl" -exec cp {} artefacts/ \;
+
+      - name: Show artefacts
+        run: |
+          ls artefacts
+
+      - name: Get latest release draft
+        id: get_release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const releases = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            console.log(releases);
+            const draftRelease = releases.data.find(release => release.draft);
+            if (!draftRelease) {
+              throw new Error('No draft release found');
+            }
+            core.setOutput('upload_url', draftRelease.upload_url);
+
+      - name: Upload artifacts and release assets
+        uses: nanoufo/action-upload-artifacts-and-release-assets@v2
+        with:
+          path: artefacts/*
+          upload-release-files: true
+          release-upload-url: ${{ steps.get_release.outputs.upload_url }}
+          github-token: ${{ secrets.PAT_UPLOAD }}
+
