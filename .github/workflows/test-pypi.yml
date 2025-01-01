@@ -1,4 +1,4 @@
-name: Publish Python to TestPypi
+name: Publish to TestPypi
 on: workflow_dispatch
 jobs:  
   publish-to-testpypi:
