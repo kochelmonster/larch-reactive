@@ -13,7 +13,7 @@ The objectives of |ra| were:
   - debuggable
 
 Installation
-============
+------------
 
 Install |ra|, either from a distribution package or from
 `PyPI <https://pypi.python.org/pypi/larch.reactive>`_ with ::
@@ -21,12 +21,12 @@ Install |ra|, either from a distribution package or from
    $ pip install larch-reactive
 
 License
-=======
+-------
 
-|ra| is released under LGPL licence.
+|ra| is released under BSD licence.
 
 Documentation
-=============
+-------------
 
 For more information, please refer to the full documentation available at:
 

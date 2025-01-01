@@ -61,13 +61,19 @@ setup(
 
     # metadata for upload to PyPI
     author='Michael Reithinger',
-    author_email='mreithinger@web.de',
     description='reactive programming for python',
-    license='GNU',
+    license='BSD',
     keywords='library',
-    url='http://larch.com/',   # project home page, if any
-
-    # could also include long_description, download_url, classifiers, etc.
+    url="https://github.com/kochelmonster/larch-reactive",
+    project_urls={
+        "Documentation": "https://kochelmonster.github.io/larch-reactive/index.html",
+    },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+        "Programming Language :: Python :: 3",
+        "Topic :: Software Development :: Libraries :: Python Modules"],
 
     **ext_args
 )
