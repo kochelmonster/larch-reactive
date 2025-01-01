@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Larch-Reactive by Examples &#8212; larch.reactive 3.6.2235 documentation</title>
+    <title>Larch-Reactive by Examples &#8212; larch.reactive 4.0.9 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=34905f61" />
-    <script src="_static/documentation_options.js?v=1e710abd"></script>
+    <script src="_static/documentation_options.js?v=b4ef4ef2"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -31,7 +31,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to larch.reactive’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">larch.reactive 3.6.2235 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">larch.reactive 4.0.9 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Larch-Reactive by Examples</a></li> 
       </ul>
     </div>  
@@ -88,14 +88,14 @@ connect rules (observer) to cells (subject).</p>
 </pre></div>
 </div>
 <dl>
-<dt>Line 4:</dt><dd><p>The <a class="reference internal" href="reference.html#id0" title="larch.reactive.reactive"><code class="xref py py-func docutils literal notranslate"><span class="pre">reactive()</span></code></a> decorator transforms an “ordinary” python
+<dt>Line 4:</dt><dd><p>The <code class="xref py py-func docutils literal notranslate"><span class="pre">reactive()</span></code> decorator transforms an “ordinary” python
 class to a “reactive” class.</p>
 </dd>
 <dt>Lines 6-10:</dt><dd><p>Attributes that can be watched by rules must be declared as
-<a class="reference internal" href="reference.html#larch.reactive.Cell" title="larch.reactive.Cell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code></a>. A Cell can have a default value by providing
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code>. A Cell can have a default value by providing
 an argument while construction. By default cells are initialized with <cite>None</cite>.</p>
 </dd>
-<dt>Line 12, 17:</dt><dd><p>The <a class="reference internal" href="reference.html#larch.reactive.rule" title="larch.reactive.rule"><code class="xref py py-func docutils literal notranslate"><span class="pre">rule()</span></code></a> decorator transforms an “ordinary” python
+<dt>Line 12, 17:</dt><dd><p>The <code class="xref py py-func docutils literal notranslate"><span class="pre">rule()</span></code> decorator transforms an “ordinary” python
 method to a rule, that is able to observe cells.
 Whenever a rule is executed, reading a cell’s value, registers the rule
 as observer for that cell. When such a cell changes its value, the rule is
@@ -189,7 +189,7 @@ _start --o rend
 
 read o-- rend"/>
 </p>
-<p>Each <a class="reference internal" href="reference.html#larch.reactive.Cell" title="larch.reactive.Cell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code></a> attribute is a <a class="reference external" href="https://docs.python.org/3/howto/descriptor.html">descriptor</a>  that stores its
+<p>Each <code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code> attribute is a <a class="reference external" href="https://docs.python.org/3/howto/descriptor.html">descriptor</a>  that stores its
 value in a <cite>Container</cite> object. <cite>write</cite> has an attribute
 <cite>__reactive_state__</cite> containing a list of all Containers</p>
 <p>For each rule method a <cite>Rule</cite> object is created and internally stored in the
@@ -274,7 +274,7 @@ deactivate rcontext"/>
 <p><cite>rcontext</cite> is the short form of “reactive context”. It is a global singleton
 object managing the internal event system of <cite>larch.reactive</cite>.</p>
 <ol class="arabic simple">
-<li><p>When <a class="reference internal" href="reference.html#larch.reactive.Cell" title="larch.reactive.Cell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code></a> attribute (in this case <cite>duration</cite>) is
+<li><p>When <code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code> attribute (in this case <cite>duration</cite>) is
 changed the <cite>Container</cite> calls <cite>emit</cite> of rcontext.</p></li>
 <li><p><cite>rcontext</cite> enters an atomic stage.</p></li>
 </ol>
@@ -284,7 +284,7 @@ changed the <cite>Container</cite> calls <cite>emit</cite> of rcontext.</p></li>
 <h2>Cell types<a class="headerlink" href="#cell-types" title="Link to this heading">¶</a></h2>
 <p>While working with <cite>larch.reactive</cite> it turned out it is convenient to have some more
 Cell objects.</p>
-<p><a class="reference internal" href="reference.html#larch.reactive.TypeCell" title="larch.reactive.TypeCell"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeCell</span></code></a> is used to ensure the cell’s value has
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeCell</span></code> is used to ensure the cell’s value has
 a specific type:</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
 <span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">Point</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -298,7 +298,7 @@ a specific type:</p>
 <span class="linenos">10</span><span class="go">2.0</span>
 </pre></div>
 </div>
-<p><a class="reference internal" href="reference.html#larch.reactive.MakeCell" title="larch.reactive.MakeCell"><code class="xref py py-class docutils literal notranslate"><span class="pre">MakeCell</span></code></a> constructs the default attribute by calling
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">MakeCell</span></code> constructs the default attribute by calling
 a constructor:</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
 <span class="linenos">2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">ListContainer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -395,7 +395,7 @@ To get the value of a pointer you have to call it: <cite>ra.Pointer(write).start
 <span class="linenos">21</span><span class="go">&#39;write own programs&#39;: 2016-01-09 10:00:00 -&gt; 2016-01-09 13:00:00</span>
 </pre></div>
 </div>
-<p><a class="reference internal" href="reference.html#larch.reactive.TypeCell" title="larch.reactive.TypeCell"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeCell</span></code></a> is used for <cite>start</cite> and <cite>duration</cite> to ensure
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeCell</span></code> is used for <cite>start</cite> and <cite>duration</cite> to ensure
 they contain pointers. The <cite>prev</cite> attribute is not needed anymore, the
 dependencies are created by pointers.</p>
 <div class="admonition note">
@@ -435,7 +435,7 @@ new value.</p></li>
 <p>Changing cell attributes can be influenced by contexts. Context’s can also
 be used as decorators.</p>
 <section id="atomic">
-<h3><a class="reference internal" href="reference.html#larch.reactive.atomic" title="larch.reactive.atomic"><code class="xref py py-func docutils literal notranslate"><span class="pre">atomic()</span></code></a><a class="headerlink" href="#atomic" title="Link to this heading">¶</a></h3>
+<h3><code class="xref py py-func docutils literal notranslate"><span class="pre">atomic()</span></code><a class="headerlink" href="#atomic" title="Link to this heading">¶</a></h3>
 <p>Changing cells within an atomic context, will postpone the call of rules after
 the context finishes:</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="n">printer</span> <span class="o">=</span> <span class="n">TaskPrinter</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">read</span><span class="p">)</span>
@@ -472,7 +472,7 @@ until the previous context has finished.</p>
 </div>
 </section>
 <section id="untouched">
-<h3><a class="reference internal" href="reference.html#larch.reactive.untouched" title="larch.reactive.untouched"><code class="xref py py-func docutils literal notranslate"><span class="pre">untouched()</span></code></a><a class="headerlink" href="#untouched" title="Link to this heading">¶</a></h3>
+<h3><code class="xref py py-func docutils literal notranslate"><span class="pre">untouched()</span></code><a class="headerlink" href="#untouched" title="Link to this heading">¶</a></h3>
 <p>Rules will connect to a all cells read by the rule. Sometimes you want
 to avoid this:</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
@@ -505,7 +505,7 @@ It often signals bad practice.</p>
 </div>
 </section>
 <section id="silent">
-<h3><a class="reference internal" href="reference.html#larch.reactive.silent" title="larch.reactive.silent"><code class="xref py py-func docutils literal notranslate"><span class="pre">silent()</span></code></a><a class="headerlink" href="#silent" title="Link to this heading">¶</a></h3>
+<h3><code class="xref py py-func docutils literal notranslate"><span class="pre">silent()</span></code><a class="headerlink" href="#silent" title="Link to this heading">¶</a></h3>
 <p>If you want to change a cell without initiating the reactive reaction:</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">ra</span><span class="o">.</span><span class="n">silent</span><span class="p">():</span>
 <span class="linenos">2</span><span class="gp">... </span>    <span class="n">read</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2016</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
@@ -596,7 +596,7 @@ the call order, to minimize the count of rule calls:</p>
 </pre></div>
 </div>
 <p><cite>larch.reactive</cite> can be forced to obey a call order by using the
-<a class="reference internal" href="reference.html#larch.reactive.rule" title="larch.reactive.rule"><code class="xref py py-func docutils literal notranslate"><span class="pre">rule()</span></code></a> with a parameter.</p>
+<code class="xref py py-func docutils literal notranslate"><span class="pre">rule()</span></code> with a parameter.</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
 <span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">RuleOrderDemo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="linenos"> 3</span><span class="gp">... </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -623,8 +623,8 @@ the call order, to minimize the count of rule calls:</p>
 <h2>Agents<a class="headerlink" href="#agents" title="Link to this heading">¶</a></h2>
 <p>To inspect internals of a cell agents can be used.</p>
 <section id="old">
-<h3><a class="reference internal" href="reference.html#larch.reactive.old" title="larch.reactive.old"><code class="xref py py-func docutils literal notranslate"><span class="pre">old()</span></code></a><a class="headerlink" href="#old" title="Link to this heading">¶</a></h3>
-<p>Within a rule <a class="reference internal" href="reference.html#larch.reactive.old" title="larch.reactive.old"><code class="xref py py-func docutils literal notranslate"><span class="pre">old()</span></code></a> delivers the value before the
+<h3><code class="xref py py-func docutils literal notranslate"><span class="pre">old()</span></code><a class="headerlink" href="#old" title="Link to this heading">¶</a></h3>
+<p>Within a rule <code class="xref py py-func docutils literal notranslate"><span class="pre">old()</span></code> delivers the value before the
 cell was changed:</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ra</span><span class="o">.</span><span class="n">reactive</span>
 <span class="linenos"> 2</span><span class="gp">... </span><span class="k">class</span> <span class="nc">TaskPrinter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -662,8 +662,8 @@ destroyed.</p>
 </div>
 </section>
 <section id="cell">
-<h3><a class="reference internal" href="reference.html#larch.reactive.cell" title="larch.reactive.cell"><code class="xref py py-func docutils literal notranslate"><span class="pre">cell()</span></code></a><a class="headerlink" href="#cell" title="Link to this heading">¶</a></h3>
-<p>The <a class="reference internal" href="reference.html#larch.reactive.cell" title="larch.reactive.cell"><code class="xref py py-func docutils literal notranslate"><span class="pre">cell()</span></code></a> agent delivers the internal
+<h3><code class="xref py py-func docutils literal notranslate"><span class="pre">cell()</span></code><a class="headerlink" href="#cell" title="Link to this heading">¶</a></h3>
+<p>The <code class="xref py py-func docutils literal notranslate"><span class="pre">cell()</span></code> agent delivers the internal
 <code class="xref py py-class docutils literal notranslate"><span class="pre">Container</span></code> object of the cell</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="gp">&gt;&gt;&gt; </span><span class="n">cread</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">read</span><span class="p">)</span>
 <span class="linenos">2</span><span class="gp">&gt;&gt;&gt; </span><span class="n">cread</span><span class="o">.</span><span class="n">end</span>
@@ -777,7 +777,7 @@ changed, and <cite>__action_end__</cite> is set after the list has changed.</p>
 </section>
 <section id="pickle">
 <h2>Pickle<a class="headerlink" href="#pickle" title="Link to this heading">¶</a></h2>
-<p>The reactive base class <a class="reference internal" href="reference.html#larch.reactive.SimpleReactive" title="larch.reactive.SimpleReactive"><code class="xref py py-func docutils literal notranslate"><span class="pre">SimpleReactive()</span></code></a> defines
+<p>The reactive base class <code class="xref py py-func docutils literal notranslate"><span class="pre">SimpleReactive()</span></code> defines
 the standard pickle methods <cite>__getstate__</cite> and <cite>__setstate__</cite> to pickle
 the cells values by default.</p>
 </section>
@@ -1012,7 +1012,7 @@ traceback.</p>
         <li class="right" >
           <a href="index.html" title="Welcome to larch.reactive’s documentation!"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">larch.reactive 3.6.2235 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">larch.reactive 4.0.9 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Larch-Reactive by Examples</a></li> 
       </ul>
     </div>
