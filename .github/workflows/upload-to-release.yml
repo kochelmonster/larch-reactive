@@ -68,22 +68,31 @@ jobs:
       - name: Delete existing assets
         uses: actions/github-script@v6
         with:
-          # github-token: ${{ secrets.PAT_UPLOAD }}
+          github-token: ${{ secrets.PAT_UPLOAD }}
           script: |
             const release_id = core.getInput('release_id');
+            if (!release_id) {
+              throw new Error('Release ID not found');
+            }
+            console.log(`Release ID: ${release_id}`);
             const assets = await github.rest.repos.listReleaseAssets({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: release_id,
             });
-            for (const asset of assets.data) {
-              await github.rest.repos.deleteReleaseAsset({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                asset_id: asset.id,
-              });
+            if (assets.data.length === 0) {
+              console.log('No assets found for deletion');
+            } else {
+              for (const asset of assets.data) {
+                console.log(`Deleting asset: ${asset.name}`);
+                await github.rest.repos.deleteReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  asset_id: asset.id,
+                });
+              }
             }
-
+            
       - name: Upload artifacts and release assets
         uses: nanoufo/action-upload-artifacts-and-release-assets@v2
         with:
