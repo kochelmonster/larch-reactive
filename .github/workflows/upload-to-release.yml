@@ -58,10 +58,9 @@ jobs:
               repo: context.repo.repo
             });
             console.log(releases);
-            var draftRelease = releases.data.find(release => release.draft);
+            let draftRelease = releases.data.find(release => release.draft);
             if (!draftRelease) {
-              draftRelease = releases[0];
-              // throw new Error('No draft release found');
+              draftRelease = releases.data[0];
             }
             core.setOutput('upload_url', draftRelease.upload_url);
 
@@ -72,4 +71,3 @@ jobs:
           upload-release-files: true
           release-upload-url: ${{ steps.get_release.outputs.upload_url }}
           github-token: ${{ secrets.PAT_UPLOAD }}
-
