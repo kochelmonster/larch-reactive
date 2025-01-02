@@ -79,7 +79,7 @@ jobs:
             }
             core.setOutput('upload_url', draftRelease.upload_url);
             core.setOutput('release_id', draftRelease.id);
-            console.log("output release_id", release_id);
+            console.log("output release_id", draftRelease.id);
 
       - name: Delete existing assets
         uses: actions/github-script@v6
