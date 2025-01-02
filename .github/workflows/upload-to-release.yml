@@ -86,7 +86,7 @@ jobs:
         with:
           github-token: ${{ secrets.PAT_UPLOAD }}
           script: |
-            const release_id = '${{ steps.get_release.outputs.release_id }}';
+            const release_id = `${{ steps.get_release.outputs.release_id }}`;
             # const release_id = core.getInput('release_id', { required: true });
             console.log("input release_id", release_id);
             if (!release_id) {
