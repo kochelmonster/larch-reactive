@@ -51,7 +51,7 @@ except ImportError:
 
 setup(
     name='larch-reactive',
-    version="4.0.9",
+    version="4.0.10",
     packages=find_namespace_packages(where="./", include=["larch.reactive"]),
     zip_safe=False,
     extras_require={
@@ -64,10 +64,8 @@ setup(
     description='reactive programming for python',
     license='BSD',
     keywords='library',
-    url="https://github.com/kochelmonster/larch-reactive",
-    project_urls={
-        "Documentation": "https://kochelmonster.github.io/larch-reactive/index.html",
-    },
+    url='https://github.com/kochelmonster/larch-reactive', 
+
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",

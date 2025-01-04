@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "larch-reactive"
+version = "4.0.10"
+license = {text = "BSD"}
+authors = [{name = "Michael Reithinger", email = "mreithinger@web.de"}]
+keywords = ["library"]
+classifiers = ["Development Status :: 5 - Production/Stable", "Intended Audience :: Developers", "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)", "Programming Language :: Python :: 3", "Topic :: Software Development :: Libraries :: Python Modules"]
+description = "reactive programming for python"
+readme = "README.rst"
+
+[project.optional-dependencies]
+documentation = ["sphinxcontrib-napoleon", "sphinxcontrib-plantuml"]
+build = ["cython"]

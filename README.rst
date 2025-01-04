@@ -1,29 +1,31 @@
-larch.reactive - A reactive programming library for python
+larch.reactive - A reactive programming library for Python
 ==========================================================
 
-|ra| is a `reactive programming library
-<https://en.wikipedia.org/wiki/Reactive_programming>`_ for python.
-The objectives of |ra| were:
+`larch.reactive` is a `reactive programming library
+<https://en.wikipedia.org/wiki/Reactive_programming>`_ for Python.
+The objectives of `larch.reactive` are:
 
-  - to be lean
-  - to be fast
-  - compatible (it should be possible to add reactive behaviour
-    to existing classes)
-  - provide a consistent programming model.
-  - debuggable
+- To be lean
+- To be fast
+- To be compatible (it should be possible to add reactive behavior
+  to existing classes)
+- To provide a consistent programming model
+- To be debuggable
 
 Installation
 ------------
 
-Install |ra|, either from a distribution package or from
-`PyPI <https://pypi.python.org/pypi/larch.reactive>`_ with ::
+Install `larch.reactive` either from a distribution package or from
+`PyPI <https://pypi.org/project/larch-reactive>`_ with:
+
+.. code-block:: bash
 
    $ pip install larch-reactive
 
 License
 -------
 
-|ra| is released under BSD licence.
+`larch.reactive` is released under the LGPL license.
 
 Documentation
 -------------
@@ -31,5 +33,3 @@ Documentation
 For more information, please refer to the full documentation available at:
 
 `larch.reactive Documentation <https://kochelmonster.github.io/larch-reactive/index.html>`_
-
-.. |ra| replace:: `larch.reactive`
