@@ -51,7 +51,7 @@ except ImportError:
 
 setup(
     name='larch-reactive',
-    version="4.0.10",
+    version="4.0.11",
     packages=find_namespace_packages(where="./", include=["larch.reactive"]),
     zip_safe=False,
     extras_require={
