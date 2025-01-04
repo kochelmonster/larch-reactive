@@ -7,7 +7,7 @@ jobs:
 
     environment:
       name: testpypi
-      url: url: https://pypi.org/p/larch-reactive
+      url: https://pypi.org/p/larch-reactive
 
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
