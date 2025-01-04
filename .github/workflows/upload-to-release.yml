@@ -44,6 +44,9 @@ jobs:
       - name: Copy .whl files to artefacts
         run: find dist -name "*.whl" -exec cp {} artefacts/ \;
 
+      - name: Copy src files to artefacts
+        run: find dist -name "*.tar.gz" -exec cp {} artefacts/ \;
+
       - name: Show artefacts
         run: ls artefacts
 
