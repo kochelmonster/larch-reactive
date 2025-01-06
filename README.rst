@@ -25,7 +25,7 @@ Install `larch.reactive` either from a distribution package or from
 License
 -------
 
-`larch.reactive` is released under the LGPL license.
+`larch.reactive` is released under the BSD license.
 
 Documentation
 -------------
